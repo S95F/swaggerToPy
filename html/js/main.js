@@ -1,10 +1,4 @@
 
-var client = new XMLHttpRequest();
-client.open('GET', './py/swaggertopy.py');
-client.onreadystatechange = function() {
-  document.getElementById("pycodecontainer").innerHTML = client.responseText;
-}
-client.send();
 
 
 function getJson(cb){
@@ -31,7 +25,6 @@ function download(text,filename) {
 window.onload = function(){
 	rLsetup("typeContainer");
 	rLsetup("formatContainer");
-	ebsetup();
 	document.getElementById("myFile").addEventListener("change", checkFile, false);
 }
 
@@ -43,25 +36,7 @@ function rLsetup(cName){
 		}
 	}
 }
-function ebsetup(){
-	var eb = document.getElementById("expandbox").children;
-	var pyC = document.getElementById("pyC");
-	function on(){
-		eb[1].style.display="block";
-		eb[0].style.display="none";
-		pyC.style.display="block";
-	}
-	function off(){
-		eb[0].style.display="block";
-		eb[1].style.display="none";
-		pyC.style.display="none";
-	}
-	eb[0].onclick = on;
-	eb[0].ontouchstart = on;
-	
-	eb[1].onclick = off;
-	eb[1].ontouchstart = off;
-}
+
 
 function checkFile(){
 	var f = document.getElementById("myFile");
