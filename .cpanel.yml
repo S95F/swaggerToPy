@@ -2,5 +2,5 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/tenexqmh/public_html/SwaggerToPY/
-    - /cp -R html $DEPLOYPATH
+    - /bin/cp -R html $DEPLOYPATH
  
