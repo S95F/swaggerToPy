@@ -32,20 +32,11 @@
 				<p>
 					Thank you for checking out my <a target="_blank" href="https://swagger.io/">Swagger</a> file to a <a target="_blank" href="https://www.python.org/">Python</a> class converter application. This application will turn various REST API definitions into easily executable python code. Facilitating application generation for client side developers and REST API destributors. It does this by utilizing the standardized method of describing REST based APIs to extract the details of the parameters of the endpoint to create a function that is then implemented as part of a class. This class definition will contain functions for each executable endpoint for the api. It is able to implement a server selection initialization function for the class if the API utilizes multiple server domains. It currently is only able to implement basic authentication using the authorization header for authenticating with the APIs. 
 				</p>
-<!--
-				<h2>Limitations</h2>
-				<div class="hdash"></div>
-				<p>
-					There are some limitations to this current implementation. Previously I mentioned it is only capable of utilizing Basic Auth for communicating to the API. OAuth is currently not implemented.  
-					
-					If any other limitations are noticed or can provide sample WSDL descripter files that are malfunctioning or use OAuth descriptions I will gladly accept them. I will leave my contact information in the footer for all issues or inquires related to this application.
-				</p>
--->
 				<h2>Specifications</h2>
 				<h3><b>Types</b></h3>
 				<div class="hdash"></div>
 				<div id="typeContainer" class="grid-container">
-					<div class="gchead">Type specified in WSDL file</div>
+					<div class="gchead">Type specified in Swagger file</div>
 					<div class="gchead">Type converted into Python</div>
 					<div >String</div>
 					<div>str</div>
@@ -57,7 +48,7 @@
 				<h3><b>Formats</b></h3>
 				<div class="hdash"></div>
 				<div id="formatContainer" class="grid-container">
-					<div class="gchead">Format specified in WSDL file</div>
+					<div class="gchead">Format specified in Swagger file</div>
 					<div class="gchead">Regular expression used to parse valid inputs in python</div>
 					<div>uuid</div>
 					<div>^[0-9a-zA-Z]{8}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{12}</div>
@@ -75,7 +66,7 @@
 			<div class="footer">
 				<div class="hdash"></div>
 				<div class="fcontent">
-					Thank you for visiting!<br>©2022<br><a id="email" href="mailto:admin@tenebrous.blue?subject=WSDL to Python SDK application">Send Email</a>
+					Thank you for visiting!<br>©2022<br><a id="email" href="mailto:admin@tenebrous.blue?subject=Swagger to Python application">Send Email</a>
 				</div>
 			</div>
 		</div>
