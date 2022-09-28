@@ -1,0 +1,199 @@
+p{
+	text-indent:2em;
+	line-break:loose;
+}
+body{
+	min-height:100vh;
+	min-width:100vw;
+	display:block;
+	background-image:url(../svg/bg.svg);
+	background-size:cover;
+	
+}
+h1{
+	width:100vw;
+	height:8vh;
+	display:flex;
+	flex-direction:row;
+	justify-content:center;
+	align-items:center;
+	font-size:5vh;
+	font-family:Fantasy;
+	user-select:none;
+	background:rgba(8,46,93,0.25);
+}
+.header{
+	width:100vw;
+	height:8vh;
+	display:flex;
+	flex-direction:row;
+	justify-content:center;
+	align-items:center;
+	font-size:min(5vh,100px);
+	font-family:Fantasy;
+	user-select:none;
+	background:rgba(8,46,93,0.25);
+}
+#btnRun{
+	display:none;
+}
+.expand{
+	height:5vmin;
+	width:5vmin;
+	transition:2s;
+}
+.expand:hover{
+	height:6.5vmin;
+	width:6.5vmin;
+}
+.cc::-webkit-scrollbar { width: 0 !important }
+.cc{
+	width:100vw;
+	height:92vh;
+	display:flex;
+	flex-direction:column;
+	justify-content: flex-start;
+	align-items:center;
+	user-select:none;
+	overflow-x:hidden;
+}
+.cc > .content{
+	width:80%;
+	background:rgba(84, 110, 255,0.25);
+	color:white;
+}
+.cc .content a{
+	transition:2s;
+}
+.cc .content a:hover{
+	font-size:18px;
+	color:rgba(0,0,1,.9);
+}
+.cc > .content > h2{
+	font-size:30px
+}
+.cc > .content > .pycode{
+	background:rgba(0,0,0,0.9);
+	user-select:none;
+	overflow-x:hidden;
+	display:none;
+}
+.ͼ1 .cm-line{
+	user-select:none;
+	background:rgba(0,0,0,0);
+	max-width:80vw;
+	overflow-wrap:anywhere;
+}
+.ͼ2 .cm-activeline{
+	background-color:rgba(0.01,0.01,0.01,0.5);
+	user-select:none;
+	cursor:none;
+}
+.fileUpload{
+	display:flex;
+	height:25vh;
+	flex-direction:column;
+	justify-content:space-evenly;
+	align-items:center;
+	font-size:25px;
+	font-family:Fantasy;
+	background:rgba(84, 110, 255,0.25);
+}
+#myFile{
+	background:white;
+	color:black;
+}
+#submit{
+	background:#d6cabf;
+	border-style:rounded;
+	border-color:#9e938a;
+	height:4rem;
+	width:9rem;
+	transition:0.3s;
+	font-size:25px;
+	font-family:Fantasy;
+	align-content:center;
+	justify-content:center;
+	align-items:center;
+	text-align:center;
+	padding: 0px;
+	color:black;
+}
+#submit:hover{
+	height:4rem;
+	width:12rem;
+	background:#dbd7d3;
+	color:black;
+}
+#submit:active{
+	background:#20cc16;
+
+}
+#submit:disabled:hover{
+	height:4rem;
+	width:12rem;
+	background:red;
+}
+.footer{
+	width:80vw;
+	display:flex;
+	flex-direction:column;
+	justify-content:center;
+	align-items:center;
+}
+.footer > .hdash{
+	margin-top:2vh;
+}
+.hdash{
+	width:100%;
+	border: 3px solid rgba(86,97,219,0.23);
+	height:0.1vh;
+	
+}
+.footer > .fcontent{
+	width:10vw;
+	height:5vh;
+	font-size:10px;
+	text-align:center;
+	user-select:none;
+}
+.grid-container {
+  display: grid;
+  grid-template-columns: 50% 50%;
+  padding: 10px;
+}
+.grid-container > div{
+  display: grid;
+  padding: 10px;
+  justify-content:center;
+  align-content:center;
+}
+.gchead{
+	background:rgba(0,0,0,.25);
+}
+.rightLine{
+	border-right: 16px double rgba(0,0,1,.5);
+}
+#email{
+	font-size:18px;
+	transition:2s;
+}
+#email:hover{
+	font-size:36px;
+	color:rgba(0,0,1,.9);
+}
+.tooltip > .tooltext{
+	color:black;
+	text-align:center;
+	position:relative;
+	top:-3vh;
+	z-index:-1000;
+	font-size:0em;
+	user-select:none;
+	transition:.5s;
+}
+
+.tooltip:hover .tooltext{
+	font-size:1em;
+	top:2vh;
+}
