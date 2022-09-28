@@ -29,7 +29,7 @@ h1{
 	flex-direction:row;
 	justify-content:center;
 	align-items:center;
-	font-size:min(5vh,70px);
+	font-size:4vw;
 	font-family:Fantasy;
 	user-select:none;
 	background:rgba(8,46,93,0.25);
