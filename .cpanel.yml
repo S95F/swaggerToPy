@@ -6,5 +6,5 @@ deployment:
     - /bin/cp -R html/js $DEPLOYPATH
     - /bin/cp -R html/py $DEPLOYPATH
     - /bin/cp -R html/svg $DEPLOYPATH
-    - /bin/cp  index.html $DEPLOYPATH
+    - /bin/cp index.html $DEPLOYPATH
  
