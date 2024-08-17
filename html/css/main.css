@@ -72,12 +72,6 @@ h1{
 .cc > .content > h2{
 	font-size:30px
 }
-.cc > .content > .pycode{
-	background:rgba(0,0,0,0.9);
-	user-select:none;
-	overflow-x:hidden;
-	display:none;
-}
 .ͼ1 .cm-line{
 	user-select:none;
 	background:rgba(0,0,0,0);

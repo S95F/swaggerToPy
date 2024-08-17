@@ -104,122 +104,121 @@ class templateFunction:
 		
 		return r
 	def fheader(self):
-		
-		
-		urlvarend = '"'+ self.json['url'].replace('{','" + ').replace('}',' + "')
-		urlvar = '\turl+='+ urlvarend
-		if(urlvar[len(urlvar)-4:] == ' + "'):
-			urlvar = urlvar[:-4]
-			urlvarend = urlvarend[:-4]
-		else:
-			urlvar += '"'
-			urlvarend += '"'
-		
-		qvar = '\tmyquery={'
-		queryVar = "return requests." + self.json['httpMode'] + "("
-		queryVar += 'self.baseurl + url'
-		
-		if(len(self.json['parameters']) > 0):
-			self.function = ""
-			
-			tbools = '\turl=""\n\t\tif('
-			qbools = '\t\tmyquery={}\n\t'
-			ibbools = '\t\tmybody='
-			paramies = {}
-			paramies['inPath'] = False
-			paramies['inQuery'] = False
-			paramies['inBody'] = False
-			self.body = []
-			unique = []
-			banned = ['type','id']
-			def checkBanned(inc):
-				if(inc['name'] in banned):
-					inc['nickname'] = inc['name']
-					inc['name'] = 'obj' + inc['name']
-			def chkunique(inc):
-				if(inc['name'] not in unique):
-					unique.append(inc['name'])
-					return False
-				else:
-					if('/' in inc['in']):
-						return inc['in'][inc['in'].rindex('/') + 1:] + '_' + inc['name']
-					else:
-						return inc['in'] + '_' + inc['name']
-			for sj in self.json['parameters']:
-				checkBanned(sj)
-				if(sj['in'] == 'path'):
-					paramies['inPath'] = True
-					temp = sj['name']
-					sj['name'] = sj['name'] if not chkunique(sj) else chkunique(sj)
-					if(temp != sj['name']):
-						urlvar = urlvar.replace(temp,sj['name']);
-					t = self.dparam(sj)
-					tbools += t + ' and '		
-				elif(sj['in'] == 'query'):
-					paramies['inQuery'] = True
-					sj['name'] = sj['name'] if not chkunique(sj) else chkunique(sj)
-					q = self.dparam(sj,True)
-					qbools += "\tif(" + q + "):\n\t\t\t\tmyquery['" + sj['name'] + "']=" + sj['name'] + "\n\t"
-				elif(sj['in'][:4] == 'body'):
-					paramies['inBody'] = True
-					sj['name'] = sj['name'] if not chkunique(sj) else chkunique(sj)
-					self.body.append(sj)
-			
-		
-			if(paramies['inPath']):
-				tbools = tbools[:-5] + '):\n'
-				self.function += "\t" + tbools + '\t\t' + urlvar + '\t'
-				self.function += "\n\t\telse:\n\t\t\traise ValueError('Error with path parameters')\n"	
+			urlvarend = '"' + self.json['url'].replace('{', '" + ').replace('}', ' + "')
+			urlvar = '\turl+=' + urlvarend
+			if urlvar[len(urlvar) - 4:] == ' + "':
+				urlvar = urlvar[:-4]
+				urlvarend = urlvarend[:-4]
 			else:
-				self.function += "\t\turl =" + urlvarend + "\n"
-				
-			if(paramies['inQuery']):
-				self.function += qbools[:-2] + '\n'
-				queryVar += ", params=myquery"
-			
-			if(paramies['inBody']):
-				ibbools += self.ebody() + "\n\t"
-				inbod = ''
-				for i in self.body:
-					temp = i['in'].split('/')
-					temp1 = "\tmybody['"
-					for a in temp[1:-1]: temp1 = temp1 + a + "']['" 
-					if(temp[len(temp)-1] != 'items'):
-						ibbools += "\tif(" + self.dparam(i,True) + "):\n\t\t"
-						if("nickname" not in i): 
-							ibbools += temp1 + i['name'] + "']=" + i['name'] + "\n\t" 
-						else:
-							ibbools += temp1 + i['nickname'] + "']=" + i['name'] + "\n\t" 
-						inbod += temp1
-						
+				urlvar += '"'
+				urlvarend += '"'
+
+			qvar = '\tmyquery={}'
+			queryVar = "requests." + self.json['httpMode'] + "(self.baseurl + url"
+
+			# Add API key handling
+			queryVar += ", **self._apply_security({})".format("{'headers': {}, 'params': {}}")
+
+			if len(self.json['parameters']) > 0:
+				self.function = ""
+
+				tbools = '\turl=""\n\t\tif('
+				qbools = '\t\tmyquery={}\n\t'
+				ibbools = '\t\tmybody='
+				paramies = {}
+				paramies['inPath'] = False
+				paramies['inQuery'] = False
+				paramies['inBody'] = False
+				self.body = []
+				unique = []
+				banned = ['type', 'id']
+
+				def checkBanned(inc):
+					if inc['name'] in banned:
+						inc['nickname'] = inc['name']
+						inc['name'] = 'obj' + inc['name']
+
+				def chkunique(inc):
+					if inc['name'] not in unique:
+						unique.append(inc['name'])
+						return False
 					else:
-						if(i["isReq"] == False):
-							ibbools += '\tif(' + i["name"] + " != None):\n\t\t\tfor i in " + i["name"] + ":\n\t\t\t"
+						if '/' in inc['in']:
+							return inc['in'][inc['in'].rindex('/') + 1:] + '_' + inc['name']
 						else:
-							ibbools += "\tfor i in " + i["name"] + ":\n\t\t"
-						if("type" in i['schema']['items']):
-							ibbools += "\tif(" + self.dparam({"name":i["name"],"isReq":["isReq"],"schema":i["schema"]["items"]},True) + "):\n\t\t\t\t" + temp1[:-2] + ".append(i)\n\t"
+							return inc['in'] + '_' + inc['name']
+
+				for sj in self.json['parameters']:
+					checkBanned(sj)
+					if sj['in'] == 'path':
+						paramies['inPath'] = True
+						temp = sj['name']
+						sj['name'] = sj['name'] if not chkunique(sj) else chkunique(sj)
+						if temp != sj['name']:
+							urlvar = urlvar.replace(temp, sj['name'])
+						t = self.dparam(sj)
+						tbools += t + ' and '
+					elif sj['in'] == 'query':
+						paramies['inQuery'] = True
+						sj['name'] = sj['name'] if not chkunique(sj) else chkunique(sj)
+						q = self.dparam(sj, True)
+						qbools += "\tif(" + q + "):\n\t\t\t\tmyquery['" + sj['name'] + "']=" + sj['name'] + "\n\t"
+					elif sj['in'][:4] == 'body':
+						paramies['inBody'] = True
+						sj['name'] = sj['name'] if not chkunique(sj) else chkunique(sj)
+						self.body.append(sj)
+
+				if paramies['inPath']:
+					tbools = tbools[:-5] + '):\n'
+					self.function += "\t" + tbools + '\t\t' + urlvar + '\t'
+					self.function += "\n\t\telse:\n\t\t\traise ValueError('Error with path parameters')\n"
+				else:
+					self.function += "\t\turl =" + urlvarend + "\n"
+
+				if paramies['inQuery']:
+					self.function += qbools[:-2] + '\n'
+					queryVar += ", params=myquery"
+
+				if paramies['inBody']:
+					ibbools += self.ebody() + "\n\t"
+					inbod = ''
+					for i in self.body:
+						temp = i['in'].split('/')
+						temp1 = "\tmybody['"
+						for a in temp[1:-1]: 
+							temp1 = temp1 + a + "']['"
+						if temp[len(temp) - 1] != 'items':
+							ibbools += "\tif(" + self.dparam(i, True) + "):\n\t\t"
+							if "nickname" not in i: 
+								ibbools += temp1 + i['name'] + "']=" + i['name'] + "\n\t"
+							else:
+								ibbools += temp1 + i['nickname'] + "']=" + i['name'] + "\n\t"
+							inbod += temp1
 						else:
-							ibbools += "\tif("
-							for j in i['schema']['items']:
-								ibbools += self.dparam({"name":"i['"+j+"']","isReq":i['schema']['items'][j]['isReq'],"schema":i['schema']['items'][j]['schema']},True) + " and "
-							ibbools = ibbools[:-5] + "):\n\t\t\t\t" + temp1[:-2] + ".append(i)\n\t" 	
-				ibbools = ibbools[:-1]
-				queryVar += ", json=mybody"
-				self.function += ibbools
-			if(self.security == {'BasicAuth': {'type': 'http', 'scheme': 'basic'}}):
-				queryVar += ", auth=(self.user,self.password)"
-			self.listParams()	
-			self.function ='\tdef ' + self.json['oid'] + '(self,' + self.listedParams + '):\n' + self.function + "\t\t" + queryVar + ")"
-			
-		else:
-			self.function = '\tdef ' + self.json['oid'] + '(self):\n'
-			self.function +="\t\turl = " + urlvarend + "\n"
-			queryVar = "\t\treturn requests." + self.json['httpMode'] + "("
-			queryVar += 'self.baseurl + url'
-			if(self.security == {'BasicAuth': {'type': 'http', 'scheme': 'basic'}}):
-				queryVar += ", auth=(self.user,self.password)"
-			self.function = self.function + queryVar + ")"
+							if i["isReq"] == False:
+								ibbools += '\tif(' + i["name"] + " != None):\n\t\t\tfor i in " + i["name"] + ":\n\t\t\t"
+							else:
+								ibbools += "\tfor i in " + i["name"] + ":\n\t\t"
+							if "type" in i['schema']['items']:
+								ibbools += "\tif(" + self.dparam({"name": i["name"], "isReq": ["isReq"], "schema": i["schema"]["items"]}, True) + "):\n\t\t\t\t" + temp1[:-2] + ".append(i)\n\t"
+							else:
+								ibbools += "\tif("
+								for j in i['schema']['items']:
+									ibbools += self.dparam({"name": "i['" + j + "']", "isReq": i['schema']['items'][j]['isReq'], "schema": i['schema']['items'][j]['schema']}, True) + " and "
+								ibbools = ibbools[:-5] + "):\n\t\t\t\t" + temp1[:-2] + ".append(i)\n\t"
+					ibbools = ibbools[:-1]
+					queryVar += ", json=mybody"
+					self.function += ibbools
+
+				self.listParams()
+				self.function = '\tdef ' + self.json['oid'] + '(self,' + self.listedParams + '):\n' + self.function + "\t\treturn " + queryVar + ")"
+
+			else:
+				self.function = '\tdef ' + self.json['oid'] + '(self):\n'
+				self.function += "\t\turl = " + urlvarend + "\n"
+				queryVar = "\t\treturn requests." + self.json['httpMode'] + "(self.baseurl + url"
+				queryVar += ", **self._apply_security({}))".format("{'headers': {}, 'params': {}}")
+				self.function += queryVar
 	def listParams(self):
 		self.listedParams = ''
 		def isAddon(j):
@@ -376,7 +375,13 @@ class myEval:
 		required = False
 		if('required' in mjson['requestBody']):
 			required = True
-		mjson = mjson['requestBody']['content']['application/json']['schema']
+		if('application/json' in mjson['requestBody']['content']):
+			mjson = mjson['requestBody']['content']['application/json']['schema']
+		elif('application/x-www-form-urlencoded' in mjson['requestBody']['content']):
+			mjson = mjson['requestBody']['content']['application/x-www-form-urlencoded']['schema']
+		elif('multipart/form-data' in mjson['requestBody']['content']):
+			mjson = mjson['requestBody']['content']['multipart/form-data']['schema']
+
 		if('$ref' in mjson):
 			temp = mjson['$ref'][2:].split('/')
 			self.casedref(mjson,'body')
@@ -391,72 +396,90 @@ class myEval:
 				self.caseParameters(mjson)
 			if( l == "requestBody" ):
 				self.caseRQbody(mjson)
-	def __init__(self,mjson):
+	def __init__(self, mjson):
 		unique = []
-		mjson = json.loads(mjson);
+		mjson = json.loads(mjson)
 		self.mjson = mjson
-		for key in mjson['paths'].keys():
-			for kp in mjson['paths'][key].keys():
-				if(type(mjson['paths'][key][kp]) is dict):
-					if('operationId' not in mjson['paths'][key][kp].keys()):
-						mjson['paths'][key][kp]['operationId'] = ""
-					uuid = kp + "_" + key[1:].replace('/','_') 
-					while(uuid.find('{') != -1):
-						uuid = uuid.replace('{','')
-						uuid = uuid.replace('}','')
-					mjson['paths'][key][kp]['operationId'] = uuid
-					if(mjson['paths'][key][kp]['operationId'] not in unique):
-						unique.append(mjson['paths'][key][kp]['operationId'])
-					else:
-						i = 0
-						while(mjson['paths'][key][kp]['operationId'] not in unique):
-							mjson['paths'][key][kp]['operationId'] = mjson['paths'][key][kp]['operationId'] + str(i)
-							i+=1
-						unique.append(mjson['paths'][key][kp]['operationId'])
-		self.json = mjson['paths']
 		self.sec = None
-		if('securitySchemes' in mjson['components']):
+
+		# Check if security schemes are defined in the OpenAPI document
+		if 'securitySchemes' in mjson['components']:
 			self.sec = mjson['components']['securitySchemes']
-		self.genClass = ""
-		myinit = {"outer":"\tdef __init__(self,","inner":""}
-		if('info' in mjson and 'title' in mjson['info']):
-			self.genClass+= "class " + mjson['info']['title'].replace(' ','_') + ":\n"
-		if(self.sec == {'BasicAuth': {'type': 'http', 'scheme': 'basic'}}):
-			myinit["outer"] += "username,password,"
-			myinit["inner"] += "\t\tself.user=username\n\t\tself.password=password\n"
-		if(len(mjson["servers"]) > 1):
+
+		# Generate the class header
+		if 'info' in mjson and 'title' in mjson['info']:
+			self.genClass = f"class {mjson['info']['title'].replace(' ', '_')}:\n"
+
+		# Initialize security parameters
+		myinit = {"outer": "\tdef __init__(self,", "inner": ""}
+		if self.sec:
+			myinit["outer"] += "security_config=None,"
+			myinit["inner"] += "\t\tself.security_config = security_config or {}\n"
+
+		# Add base URL initialization
+		if len(mjson["servers"]) > 1:
 			myinit["outer"] += "server=None,"
 			myinit["inner"] += "\t\tself.servers = ["
 			for i in mjson["servers"]:
 				myinit["inner"] += json.dumps(i) + ","
 			myinit["inner"] = myinit["inner"][:-1] + "]\n"
-			myinit["inner"] += "\t\tif(server!=None and isinstance(server,int)):\n\t\t\tself.baseurl=self.servers[server]['url']\n\t\telse:\n\t\t\tself.baseurl=self.servers[0]['url']"
+			myinit["inner"] += "\t\tif(server is not None and isinstance(server, int)):\n"
+			myinit["inner"] += "\t\t\tself.baseurl = self.servers[server]['url']\n"
+			myinit["inner"] += "\t\telse:\n\t\t\tself.baseurl = self.servers[0]['url']\n"
 		else:
-			myinit["inner"] += "\t\tself.baseurl="+json.dumps(mjson["servers"][0]['url'])
+			myinit["inner"] += "\t\tself.baseurl = " + json.dumps(mjson["servers"][0]['url']) + "\n"
+
+		# Finalize the __init__ method
 		self.genClass += myinit['outer'][:-1] + "):\n" + myinit['inner']
-		myOps = []
-		for j in self.json:
-			self.processingGP = None
-			for k in self.json[j]:
-				self.processing = {'parameters':[]}
-				if('operationId' in self.json[j][k]):
-					self.processing['oid'] = self.json[j][k]['operationId'].replace('-','_')
-					self.caseOID(self.json[j][k])
-					if(self.processingGP != None):
-						for item in self.processingGP['parameters']:
-							self.processing['parameters'].append(item)
-					self.processing['httpMode'] = k
-					self.processing['url'] = j
-					myOps.append(templateFunction(self.processing,self.sec))
-				elif('parameters' in self.json[j].keys()):
-					self.caseParameters(self.json[j])
-					self.processingGP = self.processing
-		
-		for op in myOps:
-			self.genClass +='\n' + op.function
+
+		# Add the _apply_security method to the generated class
+		self.genClass += """
+	def _apply_security(self, request_params):
+		if not self.security_config:
+			return request_params
+
+		headers = request_params.get('headers', {})
+		params = request_params.get('params', {})
+
+		for security_type, credentials in self.security_config.items():
+			if security_type == 'BasicAuth':
+				request_params['auth'] = (credentials['username'], credentials['password'])
+			elif security_type == 'BearerAuth':
+				headers['Authorization'] = f"Bearer {credentials['token']}"
+			elif security_type == 'ApiKeyAuth':
+				if credentials['in'] == 'header':
+					headers[credentials['name']] = credentials['value']
+				elif credentials['in'] == 'query':
+					params[credentials['name']] = credentials['value']
+				elif credentials['in'] == 'cookie':
+					request_params['cookies'] = {credentials['name']: credentials['value']}
+			elif security_type == 'ApiKeyAuthSecret': 
+				headers[credentials['name']] = credentials['value']
+			elif security_type == 'OAuth2':
+				headers['Authorization'] = f"Bearer {credentials['access_token']}"
+			elif security_type == 'OpenIDConnect':
+				headers['Authorization'] = f"Bearer {credentials['id_token']}"
+
+		request_params['headers'] = headers
+		request_params['params'] = params
+		return request_params
+		"""
+
+		# Continue generating methods for each operation...
+		for key in mjson['paths']:
+			for operation in mjson['paths'][key]:
+				self.processing = {'parameters': []}
+				if 'operationId' in mjson['paths'][key][operation]:
+					self.processing['oid'] = mjson['paths'][key][operation]['operationId'].replace('-', '_')
+				self.caseOID(mjson['paths'][key][operation])
+				self.processing['httpMode'] = operation
+				self.processing['url'] = key
+				function = templateFunction(self.processing, self.sec)
+				self.genClass += "\n" + function.function
+
+		# Add necessary imports
 		self.genClass = "import json\nimport re\nimport requests\n" + self.genClass
-		self.title = mjson['info']['title'].replace(' ','_') + '.py'
-		
+		self.title = mjson['info']['title'].replace(' ', '_') + '.py'
 
 
 def genSDK(json):
