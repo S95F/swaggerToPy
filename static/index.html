@@ -1,0 +1,2222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>swagger2sdk</title>
+  <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d1117; --surface: #161b22; --surface2: #21262d; --border: #30363d;
+      --accent: #58a6ff; --accent2: #388bfd; --green: #3fb950; --orange: #d29922;
+      --red: #f85149; --purple: #bc8cff; --yellow: #e3b341; --text: #c9d1d9;
+      --text-dim: #8b949e; --text-code: #e6edf3; --radius: 8px;
+      --mono: 'Cascadia Code','Fira Code','JetBrains Mono',ui-monospace,monospace;
+      --ui: -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+    }
+    html,body { height:100%; }
+    body { background:var(--bg); color:var(--text); font-family:var(--ui); font-size:14px;
+           line-height:1.5; display:flex; flex-direction:column; min-height:100vh; }
+    a { color:var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    header { background:var(--surface); border-bottom:1px solid var(--border); padding:0 24px;
+             height:52px; display:flex; align-items:center; justify-content:space-between;
+             position:sticky; top:0; z-index:100; }
+    .logo { display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px;
+            color:var(--text-code); font-family:var(--mono); }
+    .logo-icon { width:28px; height:28px; background:linear-gradient(135deg,var(--accent),var(--purple));
+                 border-radius:6px; display:flex; align-items:center; justify-content:center;
+                 font-size:14px; font-weight:900; color:#fff; }
+    .badge { background:var(--surface2); border:1px solid var(--border); border-radius:20px;
+             padding:2px 10px; font-size:11px; color:var(--text-dim); font-family:var(--mono); }
+    .layout { display:grid; grid-template-columns:360px 1fr; flex:1; min-height:0; overflow:hidden; }
+    .sidebar { background:var(--surface); border-right:1px solid var(--border); overflow-y:auto;
+               padding:20px; display:flex; flex-direction:column; gap:20px; }
+    .sidebar::-webkit-scrollbar { width:6px; }
+    .sidebar::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+    .panel { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; flex-shrink:0; }
+    .panel-head { padding:10px 14px; font-size:12px; font-weight:600; text-transform:uppercase;
+                  letter-spacing:.05em; color:var(--text-dim); border-bottom:1px solid var(--border);
+                  display:flex; align-items:center; gap:6px; }
+    .panel-body { padding:14px; }
+    .drop-zone { border:2px dashed var(--border); border-radius:var(--radius); padding:12px 14px;
+                 display:flex; align-items:center; gap:12px;
+                 cursor:pointer; transition:border-color .2s,background .2s; position:relative; }
+    .drop-zone:hover,.drop-zone.drag-over { border-color:var(--accent); background:rgba(88,166,255,.06); }
+    .drop-zone.has-file { border-color:var(--green); background:rgba(63,185,80,.06); }
+    .drop-zone input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+    .drop-icon { font-size:22px; flex-shrink:0; }
+    .drop-label { font-size:12px; color:var(--text-dim); line-height:1.4; }
+    .drop-label strong { color:var(--text); display:block; }
+    .drop-filename { font-family:var(--mono); font-size:11px; color:var(--green);
+                     word-break:break-all; margin-top:1px; }
+    /* Language select */
+    .lang-select { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:6px;
+                   color:var(--text); font-family:var(--ui); font-size:13px; font-weight:600;
+                   padding:8px 10px; outline:none; cursor:pointer; transition:border-color .15s;
+                   appearance:none; -webkit-appearance:none;
+                   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b949e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+                   background-repeat:no-repeat; background-position:right 10px center; padding-right:30px; }
+    .lang-select:focus { border-color:var(--accent); }
+    .lang-select option { background:var(--surface2); color:var(--text); }
+    /* Form */
+    .field { margin-bottom:14px; }
+    .field:last-child { margin-bottom:0; }
+    .field label { display:block; font-size:12px; font-weight:600; color:var(--text-dim);
+                   margin-bottom:5px; text-transform:uppercase; letter-spacing:.04em; }
+    .field input[type="text"],.field input[type="url"] { width:100%; background:var(--bg);
+      border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:var(--mono);
+      font-size:12px; padding:7px 10px; outline:none; transition:border-color .15s; }
+    .field input[type="text"]:focus,.field input[type="url"]:focus { border-color:var(--accent); }
+    .field input::placeholder { color:var(--text-dim); }
+    /* Toggle */
+    .toggle-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+    .toggle-row:last-child { margin-bottom:0; }
+    .toggle-row.disabled-opt { opacity:.4; pointer-events:none; }
+    .toggle-label { display:flex; flex-direction:column; }
+    .toggle-label span { font-size:13px; color:var(--text); }
+    .toggle-label small { font-size:11px; color:var(--text-dim); margin-top:1px; }
+    .toggle { position:relative; width:40px; height:22px; flex-shrink:0; }
+    .toggle input { opacity:0; width:0; height:0; }
+    .slider { position:absolute; cursor:pointer; inset:0; background:var(--border); border-radius:22px; transition:.2s; }
+    .slider::before { content:''; position:absolute; width:16px; height:16px; left:3px; top:3px;
+                      background:white; border-radius:50%; transition:.2s; }
+    .toggle input:checked + .slider { background:var(--accent); }
+    .toggle input:checked + .slider::before { transform:translateX(18px); }
+    /* Buttons */
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:6px;
+           font-size:13px; font-weight:600; cursor:pointer; border:1px solid transparent;
+           transition:background .15s,opacity .15s,transform .1s; white-space:nowrap; }
+    .btn:active { transform:scale(.97); }
+    .btn-primary { background:var(--accent2); border-color:#1f6feb; color:#fff; }
+    .btn-primary:hover { background:var(--accent); }
+    .btn-primary:disabled { opacity:.45; cursor:not-allowed; transform:none; }
+    .btn-ghost { background:var(--surface2); border-color:var(--border); color:var(--text); }
+    .btn-ghost:hover { background:var(--surface); border-color:var(--text-dim); }
+    .btn-full { width:100%; justify-content:center; }
+    /* Info grid */
+    .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .info-cell { background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:8px 10px; }
+    .info-cell .ic-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.05em;
+                           color:var(--text-dim); margin-bottom:2px; }
+    .info-cell .ic-value { font-size:14px; font-family:var(--mono); color:var(--text-code);
+                           overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .info-cell.span2 { grid-column:span 2; }
+    .format-badge { display:inline-block; padding:1px 8px; border-radius:4px; font-size:11px;
+                    font-weight:700; font-family:var(--mono); }
+    .fmt-swagger2 { background:#d29922; color:#000; }
+    .fmt-oas30 { background:#388bfd; color:#fff; }
+    .fmt-oas31 { background:#3fb950; color:#000; }
+    .fmt-asyncapi { background:#bc8cff; color:#000; }
+    /* Main / code */
+    .main { display:flex; flex-direction:column; overflow:hidden; }
+    .toolbar { padding:10px 20px; border-bottom:1px solid var(--border); display:flex;
+               align-items:center; gap:10px; background:var(--surface); }
+    .toolbar .filename { font-family:var(--mono); font-size:12px; color:var(--text-dim);
+                         flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .toolbar .stat { font-size:11px; color:var(--text-dim); font-family:var(--mono); }
+    .code-wrap { flex:1; overflow:auto; }
+    .code-wrap::-webkit-scrollbar { width:8px; height:8px; }
+    .code-wrap::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+    .code-block { min-height:100%; display:flex; }
+    .line-numbers { padding:16px 12px 16px 16px; background:var(--surface); border-right:1px solid var(--border);
+                    text-align:right; color:var(--text-dim); font-family:var(--mono); font-size:12px;
+                    line-height:1.7; user-select:none; min-width:56px; flex-shrink:0;
+                    white-space:pre; position:sticky; left:0; }
+    .code-content { flex:1; padding:16px 20px; font-family:var(--mono); font-size:12px;
+                    line-height:1.7; color:var(--text-code); white-space:pre; tab-size:4; }
+    /* Python */
+    .kw { color:#ff7b72; } .bi { color:#79c0ff; } .st { color:#a5d6ff; }
+    .cm { color:#8b949e; font-style:italic; } .nu { color:#f2cc60; }
+    .dc { color:#3fb950; } .fn { color:#d2a8ff; } .tp { color:#ffa657; }
+    /* JS-specific */
+    .js-kw { color:#ff7b72; } .js-fn { color:#d2a8ff; } .js-st { color:#a5d6ff; }
+    .js-cm { color:#8b949e; font-style:italic; } .js-nu { color:#f2cc60; }
+    .js-tp { color:#ffa657; } .js-bi { color:#79c0ff; }
+    /* Go-specific */
+    .go-kw { color:#ff7b72; } .go-fn { color:#d2a8ff; } .go-st { color:#a5d6ff; }
+    .go-cm { color:#8b949e; font-style:italic; } .go-nu { color:#f2cc60; }
+    .go-tp { color:#ffa657; } .go-bi { color:#79c0ff; }
+    /* Empty state */
+    .empty-state { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+                   gap:12px; color:var(--text-dim); padding:40px; text-align:center; }
+    .empty-icon { font-size:56px; opacity:.3; }
+    .empty-title { font-size:18px; font-weight:600; color:var(--text-dim); }
+    .empty-sub { font-size:13px; max-width:340px; }
+    /* Spinner */
+    .spinner { width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--accent);
+               border-radius:50%; animation:spin .6s linear infinite; display:inline-block; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    /* Toast */
+    #toast { position:fixed; bottom:24px; right:24px; padding:10px 16px; border-radius:var(--radius);
+             font-size:13px; font-weight:600; border:1px solid; opacity:0; transition:opacity .25s;
+             pointer-events:none; z-index:999; }
+    #toast.show { opacity:1; }
+    #toast.ok  { background:#0d1f0f; border-color:var(--green); color:var(--green); }
+    #toast.err { background:#1f0d0d; border-color:var(--red); color:var(--red); }
+    .error-box { display:none; margin:0; padding:12px 14px; background:#1f0d0d; border:1px solid var(--red);
+                 border-radius:var(--radius); font-family:var(--mono); font-size:12px; color:var(--red);
+                 white-space:pre-wrap; word-break:break-word; }
+    .hidden { display:none !important; }
+    @media (max-width:768px) {
+      .layout { grid-template-columns:1fr; }
+      .sidebar { border-right:none; border-bottom:1px solid var(--border); max-height:50vh; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    swagger2sdk
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="badge">Swagger 2.0 · OAS 3.0/3.1 · AsyncAPI · Python · JS · Go · 100% browser</span>
+    <a href="https://github.com/S95F/swaggerToPy" target="_blank"
+       class="btn btn-ghost" style="padding:5px 12px;font-size:12px;">⭐ GitHub</a>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+
+    <div class="panel">
+      <div class="panel-head">📂 Spec File</div>
+      <div class="panel-body">
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="fileInput" accept=".json,.yaml,.yml" />
+          <div class="drop-icon">📄</div>
+          <div class="drop-label">
+            <strong>Drop a spec file here</strong>
+            or click to browse · JSON, YAML
+            <div class="drop-filename" id="dropFilename"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">🌐 Output Language</div>
+      <div class="panel-body">
+        <select class="lang-select" id="langSelect">
+          <option value="python">🐍  Python</option>
+          <option value="javascript">🟨  JavaScript</option>
+          <option value="go">🐹  Go</option>
+          <option value="c">🔵  C</option>
+          <option value="cpp">🔷  C++</option>
+          <option value="csharp">🟦  C#  (.NET)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">⚙️ Options</div>
+      <div class="panel-body">
+        <div class="toggle-row" id="rowAsync">
+          <div class="toggle-label">
+            <span>Async client</span>
+            <small id="asyncDesc">Uses <code>httpx</code> + <code>async def</code></small>
+          </div>
+          <label class="toggle"><input type="checkbox" id="optAsync" /><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row" id="rowValidate">
+          <div class="toggle-label">
+            <span>Parameter validation</span>
+            <small>Inline type / format / constraint checks</small>
+          </div>
+          <label class="toggle"><input type="checkbox" id="optValidate" checked /><span class="slider"></span></label>
+        </div>
+        <div class="field" style="margin-top:14px;">
+          <label>Base URL override</label>
+          <input type="url" id="optBaseUrl" placeholder="https://api.example.com/v1" />
+        </div>
+      </div>
+    </div>
+
+    <div class="panel hidden" id="specInfoPanel">
+      <div class="panel-head">🔍 Spec Info</div>
+      <div class="panel-body">
+        <div class="info-grid" id="specInfoGrid"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-primary btn-full" id="btnGenerate" disabled>
+        <span id="generateLabel">Generate SDK</span>
+      </button>
+      <button class="btn btn-ghost btn-full hidden" id="btnDownload">⬇ Download</button>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+
+  </aside>
+
+  <main class="main">
+    <div class="toolbar hidden" id="toolbar">
+      <span class="filename" id="outFilename">output.py</span>
+      <span class="stat" id="outStats"></span>
+      <button class="btn btn-ghost" id="btnCopy" style="padding:5px 10px;font-size:12px;">📋 Copy</button>
+    </div>
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">⚡</div>
+      <div class="empty-title">No output yet</div>
+      <div class="empty-sub">Upload a Swagger / OpenAPI / AsyncAPI spec, pick a language, then click <strong>Generate SDK</strong>.</div>
+    </div>
+    <div class="code-wrap hidden" id="codeWrap">
+      <div class="code-block">
+        <div class="line-numbers" id="lineNumbers"></div>
+        <div class="code-content" id="codeContent"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  swagger2sdk — pure JavaScript multi-language SDK generator
+//  Supports: Swagger 2.0, OpenAPI 3.0/3.1, AsyncAPI 2/3
+//  Output: Python, JavaScript, Go
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── Version detection ─────────────────────────────────────────────────
+function detectVersion(spec) {
+  if (spec.swagger) return 'swagger2';
+  const oa = spec.openapi || '';
+  if (oa.startsWith('3.0')) return 'oas30';
+  if (oa.startsWith('3.1')) return 'oas31';
+  if (spec.asyncapi) return 'asyncapi';
+  throw new Error('Unknown spec format — no swagger / openapi / asyncapi key found.');
+}
+
+// ── $ref resolver ─────────────────────────────────────────────────────
+class RefResolver {
+  constructor(spec) { this._spec = spec; this._cache = {}; }
+  resolve(ref) {
+    if (this._cache[ref]) return this._cache[ref];
+    if (!ref.startsWith('#/')) throw new Error(`External $ref not supported: ${ref}`);
+    let node = this._spec;
+    for (const part of ref.slice(2).split('/'))
+      node = node[part.replace(/~1/g, '/').replace(/~0/g, '~')];
+    this._cache[ref] = node;
+    return node;
+  }
+  deref(obj, depth = 0) {
+    if (depth > 40 || !obj) return obj;
+    if (typeof obj === 'object' && '$ref' in obj) return this.deref(this.resolve(obj['$ref']), depth + 1);
+    return obj;
+  }
+}
+
+// ── Deep merge ────────────────────────────────────────────────────────
+function deepMerge(target, source) {
+  for (const [k, v] of Object.entries(source || {})) {
+    if (k === 'required' && Array.isArray(v) && Array.isArray(target[k]))
+      target[k] = [...new Set([...target[k], ...v])];
+    else if (k === 'properties' && v && typeof v === 'object' && target[k] && typeof target[k] === 'object')
+      for (const [pk, pv] of Object.entries(v)) { if (!(pk in target[k])) target[k][pk] = pv; }
+    else if (!(k in target)) target[k] = v;
+  }
+}
+
+// ── Schema flattening ─────────────────────────────────────────────────
+function flattenSchema(schema, resolver, depth = 0) {
+  if (depth > 20 || !schema) return schema || {};
+  schema = resolver.deref(schema);
+  if (!schema || typeof schema !== 'object') return {};
+
+  if ('allOf' in schema) {
+    const merged = {};
+    for (const sub of schema.allOf) deepMerge(merged, flattenSchema(sub, resolver, depth + 1));
+    for (const [k, v] of Object.entries(schema)) if (k !== 'allOf' && !(k in merged)) merged[k] = v;
+    return merged;
+  }
+
+  for (const kw of ['anyOf', 'oneOf']) {
+    if (kw in schema) {
+      for (const v of (schema[kw] || [])) {
+        const flat = flattenSchema(v, resolver, depth + 1);
+        const t = flat.type;
+        if (Array.isArray(t)) {
+          const nn = t.filter(x => x !== 'null');
+          if (nn.length) return { ...flat, type: nn[0], nullable: true };
+        } else if (t && t !== 'null') return flat;
+      }
+    }
+  }
+  return schema;
+}
+
+// ── Name helpers ──────────────────────────────────────────────────────
+function safeName(s) {
+  s = (s || '').replace(/[^a-zA-Z0-9_]/g, '_');
+  if (/^\d/.test(s)) s = '_' + s;
+  return s || '_';
+}
+
+function clsName(title) {
+  return title.split(/[\s\-_/\.]+/).filter(Boolean).map(p => p[0].toUpperCase() + p.slice(1)).join('') || 'ApiClient';
+}
+
+function uniqueOid(method, path, used) {
+  let base = [method.toLowerCase(), ...path.replace(/[{}]/g,'').split('/').filter(Boolean)].map(safeName).join('_');
+  let name = base, i = 2;
+  while (used.includes(name)) name = `${base}_${i++}`;
+  used.push(name); return name;
+}
+
+// ── Parameter helpers ─────────────────────────────────────────────────
+function collectParams(op, pathItem, resolver) {
+  const merged = {};
+  for (const p of [...(pathItem.parameters||[]), ...(op.parameters||[])]) {
+    const dp = resolver.deref(p); merged[`${dp.name}|${dp.in}`] = dp;
+  }
+  return Object.values(merged);
+}
+
+function extractBodyParams(rb, resolver) {
+  const content = rb.content || {}, rbReq = !!rb.required;
+  for (const ct of ['application/json','application/x-www-form-urlencoded','multipart/form-data','application/octet-stream','text/plain']) {
+    if (!(ct in content)) continue;
+    let schema = flattenSchema(content[ct].schema || {}, resolver);
+    const params = [];
+    if (schema.type === 'object' || 'properties' in schema) {
+      const req = schema.required || [];
+      for (const [pn, ps] of Object.entries(schema.properties || {})) {
+        const flat = flattenSchema(ps, resolver);
+        params.push({ name:pn, in:'body', schema:flat, required:req.includes(pn)||rbReq, description:flat.description||'' });
+      }
+    } else if (Object.keys(schema).length) {
+      params.push({ name:'body', in:'body', schema, required:rbReq, description:rb.description||'' });
+    }
+    return [ct, params];
+  }
+  return ['application/json', []];
+}
+
+// ── Swagger 2 → OAS3 normaliser ───────────────────────────────────────
+function normaliseSwagger2(spec) {
+  spec = JSON.parse(JSON.stringify(spec));
+  const host=spec.host||'localhost', base=spec.basePath||'/', schemes=spec.schemes||['https'];
+  spec.servers = spec.servers || [{ url:`${schemes[0]}://${host}${base}` }];
+  if (!spec.components) spec.components = {};
+  if (spec.definitions) { spec.components.schemas = spec.definitions; delete spec.definitions; }
+  if (spec.responses)   { spec.components.responses = spec.responses; delete spec.responses; }
+  if (spec.parameters)  { spec.components.parameters = spec.parameters; delete spec.parameters; }
+  if (spec.securityDefinitions) {
+    const out = {};
+    for (const [name, sd] of Object.entries(spec.securityDefinitions)) {
+      const t = sd.type||'';
+      if (t==='basic') out[name]={type:'http',scheme:'basic'};
+      else if (t==='apiKey') out[name]={type:'apiKey',in:sd.in||'header',name:sd.name||name};
+      else if (t==='oauth2') {
+        const fmap={implicit:'implicit',password:'password',application:'clientCredentials',accessCode:'authorizationCode'};
+        const fo={}; if(sd.authorizationUrl) fo.authorizationUrl=sd.authorizationUrl;
+        if(sd.tokenUrl) fo.tokenUrl=sd.tokenUrl; fo.scopes=sd.scopes||{};
+        out[name]={type:'oauth2',flows:{[fmap[sd.flow]||sd.flow]:fo}};
+      } else out[name]=sd;
+    }
+    spec.components.securitySchemes=out; delete spec.securityDefinitions;
+  }
+  const gc=spec.consumes||['application/json'];
+  for (const pi of Object.values(spec.paths||{})) {
+    for (const method of Object.keys(pi)) {
+      if (['parameters','summary','description','$ref','servers'].includes(method)) continue;
+      const op=pi[method]; if(!op||typeof op!=='object') continue;
+      const consumes=op.consumes||gc;
+      const body=(op.parameters||[]).filter(p=>p.in==='body');
+      const form=(op.parameters||[]).filter(p=>p.in==='formData');
+      op.parameters=(op.parameters||[]).filter(p=>!['body','formData'].includes(p.in));
+      for (const p of op.parameters) {
+        if (!p.schema && p.type) {
+          p.schema={};
+          for (const k of ['type','format','enum','minimum','maximum','minLength','maxLength','pattern','items','default','example'])
+            if(k in p){p.schema[k]=p[k];delete p[k];}
+        }
+      }
+      if (body.length) {
+        const bp=body[0], ctObj={};
+        for (const ct of consumes) ctObj[ct]={schema:bp.schema||{}};
+        op.requestBody={required:!!bp.required,description:bp.description||'',content:ctObj};
+      } else if (form.length) {
+        const props={}, req=[];
+        for (const fp of form) {
+          props[fp.name]=fp.schema||{type:fp.type||'string'};
+          if(fp.description) props[fp.name].description=fp.description;
+          if(fp.required) req.push(fp.name);
+        }
+        const schema={type:'object',properties:props}; if(req.length) schema.required=req;
+        const ct=consumes.includes('multipart/form-data')?'multipart/form-data':'application/x-www-form-urlencoded';
+        op.requestBody={required:req.length>0,content:{[ct]:{schema}}};
+      }
+    }
+  }
+  return spec;
+}
+
+// ── Prepare spec (shared) ─────────────────────────────────────────────
+function prepareSpec(rawSpec, baseUrl) {
+  let spec = JSON.parse(JSON.stringify(rawSpec));
+  const version = detectVersion(spec);
+  if (version === 'swagger2') spec = normaliseSwagger2(spec);
+  if (baseUrl) {
+    spec.servers = spec.servers || [];
+    spec.servers.length ? spec.servers[0].url = baseUrl : spec.servers = [{url:baseUrl}];
+  }
+  return spec;
+}
+
+function collectOperations(spec, resolver) {
+  const operations = [], usedNames = [];
+  for (const [path, pi] of Object.entries(spec.paths || {})) {
+    if (!pi || typeof pi !== 'object') continue;
+    const rpi = resolver.deref(pi);
+    for (const method of ['get','post','put','patch','delete','head','options','trace']) {
+      const op = rpi[method]; if (!op || typeof op !== 'object') continue;
+      let oid = op.operationId ? safeName(op.operationId) : '';
+      if (!oid || usedNames.includes(oid)) oid = uniqueOid(method, path, usedNames);
+      else usedNames.push(oid);
+      operations.push({
+        oid, method, path,
+        params: collectParams(op, rpi, resolver),
+        requestBody: op.requestBody,
+        responses: op.responses || {},
+        security: op.security,
+        summary: op.summary || '',
+        description: op.description || '',
+        deprecated: !!op.deprecated,
+        tags: op.tags || [],
+      });
+    }
+  }
+  return operations;
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  PYTHON GENERATOR
+// ════════════════════════════════════════════════════════════════════════
+
+const OAS_TO_PY = { string:'str', integer:'int', number:'float', boolean:'bool',
+                    array:'list', object:'dict', null:'None' };
+
+function schemaToAnnotation(schema, resolver) {
+  if (!schema) return 'Any';
+  schema = flattenSchema(schema, resolver);
+  let t = schema.type, nullable = schema.nullable || false;
+  if (Array.isArray(t)) { nullable = t.includes('null'); t = t.filter(x => x !== 'null')[0] || null; }
+  let base;
+  if (t === 'array') {
+    const inner = schema.items ? schemaToAnnotation(schema.items, resolver) : 'Any';
+    base = `List[${inner}]`;
+  } else if (t === 'object') {
+    if ('additionalProperties' in schema) {
+      const ap = schema.additionalProperties;
+      base = typeof ap === 'boolean' ? 'Dict[str, Any]' : `Dict[str, ${schemaToAnnotation(ap, resolver)}]`;
+    } else base = 'Dict[str, Any]';
+  } else if (t && OAS_TO_PY[t]) base = OAS_TO_PY[t];
+  else if (!t && ('properties' in schema || 'additionalProperties' in schema)) base = 'Dict[str, Any]';
+  else base = 'Any';
+  return nullable ? `Optional[${base}]` : base;
+}
+
+const FORMAT_PATTERNS = {
+  'uuid':      '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+  'date':      '^\\d{4}-\\d{2}-\\d{2}$',
+  'date-time': '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$',
+  'time':      '^\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})?$',
+  'email':     '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$',
+  'uri':       '^[a-zA-Z][a-zA-Z0-9+\\-.]*:',
+  'url':       '^https?://',
+  'ipv4':      '^(\\d{1,3}\\.){3}\\d{1,3}$',
+  'ipv6':      '^[0-9a-fA-F:]{2,39}$',
+  'hostname':  '^[a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?(\\.[a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?)*$',
+  'byte':      '^[A-Za-z0-9+/]+=*$',
+};
+
+function validationChecks(v, schema) {
+  const checks = [];
+  let t = schema.type || '';
+  if (Array.isArray(t)) t = t.filter(x => x !== 'null')[0] || '';
+  const typeMap = { string:'str', integer:'int', boolean:'bool', array:'list', object:'dict' };
+  if (typeMap[t]) checks.push(`isinstance(${v}, ${typeMap[t]})`);
+  else if (t === 'number') checks.push(`isinstance(${v}, (int, float))`);
+  const fmt = schema.format || '';
+  if (FORMAT_PATTERNS[fmt]) checks.push(`re.match(${JSON.stringify(FORMAT_PATTERNS[fmt])}, str(${v})) is not None`);
+  if (schema.pattern) checks.push(`re.match(${JSON.stringify(schema.pattern)}, str(${v})) is not None`);
+  if (schema.enum) checks.push(`${v} in ${JSON.stringify(schema.enum)}`);
+  if (typeof schema.minimum === 'number') checks.push(`${v} ${schema.exclusiveMinimum === true ? '>' : '>='} ${schema.minimum}`);
+  if (typeof schema.maximum === 'number') checks.push(`${v} ${schema.exclusiveMaximum === true ? '<' : '<='} ${schema.maximum}`);
+  if (typeof schema.exclusiveMinimum === 'number') checks.push(`${v} > ${schema.exclusiveMinimum}`);
+  if (typeof schema.exclusiveMaximum === 'number') checks.push(`${v} < ${schema.exclusiveMaximum}`);
+  if (schema.multipleOf) checks.push(`${v} % ${schema.multipleOf} == 0`);
+  if (schema.minLength) checks.push(`len(str(${v})) >= ${schema.minLength}`);
+  if (schema.maxLength) checks.push(`len(str(${v})) <= ${schema.maxLength}`);
+  if (schema.minItems) checks.push(`len(${v}) >= ${schema.minItems}`);
+  if (schema.maxItems) checks.push(`len(${v}) <= ${schema.maxItems}`);
+  if (schema.uniqueItems) checks.push(`len(set(map(str, ${v}))) == len(${v})`);
+  return checks;
+}
+
+function genParamValidation(v, schema, required, pad = '        ') {
+  const checks = validationChecks(v, schema);
+  if (!checks.length) return [];
+  const cond = checks.join(' and ');
+  if (required) return [`${pad}if not (${cond}):`, `${pad}    raise ValueError(f"Invalid value for '${v}': {${v}!r}")`];
+  return [`${pad}if ${v} is not None and not (${cond}):`, `${pad}    raise ValueError(f"Invalid value for '${v}': {${v}!r}")`];
+}
+
+const PY_KWS = new Set(['False','None','True','and','as','assert','async','await','break','class',
+  'continue','def','del','elif','else','except','finally','for','from','global','if','import',
+  'in','is','lambda','nonlocal','not','or','pass','raise','return','try','while','with','yield',
+  'type','id','filter','input','list','dict','set','object','format','max','min','map','zip']);
+
+function pName(raw) { const n = safeName(raw); return PY_KWS.has(n) ? n + '_' : n; }
+
+function inferReturn(responses, resolver) {
+  const statuses = Object.keys(responses).sort((a,b) => a==='200'?-1:b==='200'?1:a.localeCompare(b));
+  for (const s of statuses) {
+    const sc = parseInt(s); if (isNaN(sc)||sc<200||sc>=300) continue;
+    const resp = resolver.deref(responses[s]);
+    for (const [ct,ctv] of Object.entries(resp.content||{}))
+      if (ct.includes('json') && ctv.schema) return schemaToAnnotation(flattenSchema(ctv.schema,resolver),resolver);
+  }
+  return 'Any';
+}
+
+function emitInit(L, serverUrls, secSchemes) {
+  L.push('    def __init__(');
+  L.push('        self,');
+  L.push('        base_url: Optional[str] = None,');
+  L.push('        security_config: Optional[Dict[str, Any]] = None,');
+  if (serverUrls.length>1) L.push('        server_index: int = 0,');
+  L.push('    ) -> None:');
+  L.push('        """');
+  L.push('        Args:');
+  L.push('            base_url: Override the default server URL.');
+  L.push('            security_config: Auth credentials keyed by scheme name.');
+  for (const [n,sc] of Object.entries(secSchemes)) {
+    const t=sc.type||'', s=sc.scheme||'';
+    if(t==='http'&&s==='basic')   L.push(`                ${JSON.stringify(n)}: {"username": "...", "password": "..."}`);
+    else if(t==='http'&&s==='bearer') L.push(`                ${JSON.stringify(n)}: {"token": "..."}`);
+    else if(t==='apiKey')         L.push(`                ${JSON.stringify(n)}: {"api_key": "..."}`);
+    else if(t==='oauth2'||t==='openIdConnect') L.push(`                ${JSON.stringify(n)}: {"access_token": "..."}`);
+    else if(t==='mutualTLS')      L.push(`                ${JSON.stringify(n)}: {"cert": "/path/to/cert.pem"}`);
+  }
+  if (serverUrls.length>1) L.push(`            server_index: Which server URL to use (0 = ${JSON.stringify(serverUrls[0])}).`);
+  L.push('        """');
+  if (serverUrls.length>1) {
+    L.push(`        _servers: List[str] = ${JSON.stringify(serverUrls)}`);
+    L.push('        self.base_url: str = base_url or _servers[server_index]');
+  } else {
+    L.push(`        self.base_url: str = base_url or ${JSON.stringify(serverUrls[0])}`);
+  }
+  L.push('        self.security_config: Dict[str, Any] = security_config or {}');
+  L.push(`        self._sec_schemes: Dict[str, Any] = ${JSON.stringify(secSchemes)}`);
+  L.push('');
+  L.push(
+    `    def _apply_security(self, kw: Dict[str, Any], op_security: Optional[list] = None) -> Dict[str, Any]:`,
+    `        """Inject auth into request kwargs based on security_config."""`,
+    `        scheme_names: list = []`,
+    `        if op_security is not None:`,
+    `            for req in op_security:`,
+    `                if isinstance(req, dict):`,
+    `                    scheme_names.extend(req.keys())`,
+    `                elif isinstance(req, str):`,
+    `                    scheme_names.append(req)`,
+    `        else:`,
+    `            scheme_names = list(self.security_config.keys())`,
+    `        for name in scheme_names:`,
+    `            cfg = self.security_config.get(name)`,
+    `            if not cfg: continue`,
+    `            sc = self._sec_schemes.get(name, {})`,
+    `            st = sc.get('type', '')`,
+    `            if st == 'http':`,
+    `                if sc.get('scheme') == 'basic':`,
+    `                    kw['auth'] = (cfg['username'], cfg['password'])`,
+    `                elif sc.get('scheme') == 'bearer':`,
+    `                    kw.setdefault('headers', {})['Authorization'] = f"Bearer {cfg['token']}"`,
+    `                else:`,
+    `                    kw.setdefault('headers', {})['Authorization'] = cfg.get('token', '')`,
+    `            elif st == 'apiKey':`,
+    `                loc = sc.get('in', 'header'); key_name = sc.get('name', name)`,
+    `                val = cfg.get('api_key', cfg.get('value', ''))`,
+    `                if loc == 'header': kw.setdefault('headers', {})[key_name] = val`,
+    `                elif loc == 'query': kw.setdefault('params', {})[key_name] = val`,
+    `                elif loc == 'cookie': kw.setdefault('cookies', {})[key_name] = val`,
+    `            elif st in ('oauth2', 'openIdConnect'):`,
+    `                token = cfg.get('access_token', cfg.get('token', ''))`,
+    `                kw.setdefault('headers', {})['Authorization'] = f'Bearer {token}'`,
+    `            elif st == 'mutualTLS':`,
+    `                kw['cert'] = cfg.get('cert')`,
+    `        return kw`,
+    '',
+  );
+}
+
+function emitMethod(L, op, resolver, useAsync, validate) {
+  const {oid,method,path,params:allP,requestBody:rb,responses,security,deprecated,tags} = op;
+  const byLoc = loc => allP.filter(p => p.in === loc);
+  const pathP=byLoc('path'), queryP=byLoc('query'), headerP=byLoc('header'), cookieP=byLoc('cookie');
+  let bodyCt='application/json', bodyP=[];
+  if (rb) { const rr=resolver.deref(rb); [bodyCt,bodyP]=extractBodyParams(rr,resolver); }
+  const isReq = p => !!(p.required || p.in==='path');
+  const ordered=[
+    ...pathP.filter(isReq),...queryP.filter(isReq),...headerP.filter(isReq),...cookieP.filter(isReq),...bodyP.filter(isReq),
+    ...pathP.filter(p=>!isReq(p)),...queryP.filter(p=>!isReq(p)),...headerP.filter(p=>!isReq(p)),...cookieP.filter(p=>!isReq(p)),...bodyP.filter(p=>!isReq(p)),
+  ];
+  const retAnn=inferReturn(responses,resolver);
+  const sig=['self',...ordered.map(p=>{
+    const n=pName(p.name), s=flattenSchema(p.schema||{},resolver), ann=schemaToAnnotation(s,resolver), req=isReq(p);
+    return req ? `${n}: ${ann}` : (ann.includes('Optional')?`${n}: ${ann} = None`:`${n}: Optional[${ann}] = None`);
+  })];
+  const kw=useAsync?'async def':'def';
+  L.push('',`    ${kw} ${oid}(${sig.join(', ')}) -> ${retAnn}:`);
+  const sum=(op.summary||'').trim(), desc=(op.description||'').trim();
+  L.push('        """');
+  if(deprecated) L.push('        .. deprecated::');
+  if(sum) L.push(`        ${sum}`);
+  if(desc&&desc!==sum){L.push('        ');L.push(`        ${desc}`);}
+  L.push(`        \`\`${method.toUpperCase()} ${path}\`\``);
+  if(tags.length) L.push(`        Tags: ${tags.join(', ')}`);
+  if(ordered.length){
+    L.push('        ','        Args:');
+    for (const p of ordered) {
+      const n=pName(p.name),s=flattenSchema(p.schema||{},resolver),ann=schemaToAnnotation(s,resolver);
+      const extra=s.enum?` Allowed: ${JSON.stringify(s.enum)}.`:'';
+      L.push(`            ${n} (${ann}, ${p.in}, ${isReq(p)?'required':'optional'}): ${(p.description||'').trim()}${extra}`.trimEnd());
+    }
+  }
+  L.push('        ','        Returns:',`            ${retAnn}`,'        """');
+  let fmtPath=path;
+  for(const pp of pathP) fmtPath=fmtPath.replace(`{${pp.name}}`,`{${pName(pp.name)}}`);
+  L.push(`        _url = self.base_url + f"${fmtPath}"`);
+  if(validate) for(const p of ordered) L.push(...genParamValidation(pName(p.name),flattenSchema(p.schema||{},resolver),isReq(p)));
+  L.push('        _kw: Dict[str, Any] = {}');
+  function emitLoc(params,kwKey,varN){
+    if(!params.length) return;
+    L.push(`        _${varN}: Dict[str, Any] = {}`);
+    for(const p of params){const n=pName(p.name),r=p.name;isReq(p)?L.push(`        _${varN}[${JSON.stringify(r)}] = ${n}`):L.push(`        if ${n} is not None: _${varN}[${JSON.stringify(r)}] = ${n}`);}
+    L.push(`        if _${varN}: _kw[${JSON.stringify(kwKey)}] = _${varN}`);
+  }
+  emitLoc(queryP,'params','params');
+  emitLoc(headerP,'headers','headers');
+  emitLoc(cookieP,'cookies','cookies');
+  if(bodyP.length){
+    if(bodyCt.includes('json')){
+      L.push('        _body: Dict[str, Any] = {}');
+      for(const p of bodyP){const n=pName(p.name),r=p.name;
+        if(isReq(p)){r==='body'?L.push(`        _body = ${n} if isinstance(${n}, dict) else {'body': ${n}}`):L.push(`        _body[${JSON.stringify(r)}] = ${n}`);}
+        else{r==='body'?L.push(`        if ${n} is not None: _body = ${n} if isinstance(${n}, dict) else {'body': ${n}}`):L.push(`        if ${n} is not None: _body[${JSON.stringify(r)}] = ${n}`);}
+      }
+      L.push("        if _body: _kw['json'] = _body");
+    } else if(bodyCt.includes('form')||bodyCt.includes('multipart')){
+      const fk=bodyCt.includes('multipart')?'files':'data';
+      L.push('        _form: Dict[str, Any] = {}');
+      for(const p of bodyP){const n=pName(p.name),r=p.name;isReq(p)?L.push(`        _form[${JSON.stringify(r)}] = ${n}`):L.push(`        if ${n} is not None: _form[${JSON.stringify(r)}] = ${n}`);}
+      L.push(`        if _form: _kw[${JSON.stringify(fk)}] = _form`);
+    } else {
+      L.push("        if body is not None: _kw['data'] = body");
+      L.push(`        _kw.setdefault('headers', {})['Content-Type'] = ${JSON.stringify(bodyCt)}`);
+    }
+  }
+  security!==undefined ? L.push(`        _kw = self._apply_security(_kw, ${JSON.stringify(security)})`) : L.push('        _kw = self._apply_security(_kw)');
+  if(useAsync){L.push('        async with httpx.AsyncClient() as _client:');L.push(`            _resp = await _client.${method}(_url, **_kw)`);}
+  else L.push(`        _resp = requests.${method}(_url, **_kw)`);
+  L.push("        _resp.raise_for_status()","        _ct = _resp.headers.get('Content-Type', '')","        if 'json' in _ct:","            return _resp.json()","        if _resp.content:","            return _resp.text","        return None");
+}
+
+function generateAsyncApi(spec) {
+  const title=spec.info?.title||'AsyncApiClient', av=spec.asyncapi||'?';
+  const cName=clsName(title), channels=spec.channels||{}, operations=spec.operations||{};
+  const L=[];
+  L.push('# Generated by swagger2sdk (AsyncAPI stub)');
+  L.push('# AsyncAPI describes event-driven APIs. Implement the transport layer per method.');
+  L.push('from __future__ import annotations');
+  L.push('from typing import Any, Callable, Dict, Optional');
+  L.push('','');
+  L.push(`class ${cName}:`);
+  L.push(`    """AsyncAPI ${av} — ${title}"""`,'');
+  L.push('    def __init__(self) -> None:');
+  L.push("        self._handlers: Dict[str, Callable] = {}",'');
+  L.push('    def on(self, channel: str, handler: Callable) -> None:');
+  L.push('        """Register a message handler for a channel."""');
+  L.push('        self._handlers[channel] = handler','');
+  L.push('    def dispatch(self, channel: str, message: Any) -> None:');
+  L.push('        """Dispatch a received message to the registered handler."""');
+  L.push('        if channel in self._handlers:');
+  L.push('            self._handlers[channel](message)','');
+  const emitted=new Set();
+  for (const [oid, op] of Object.entries(operations)) {
+    if(typeof op!=='object') continue;
+    const ch=(op.channel||{})['$ref']?.split('/').pop()||oid;
+    const safe=safeName(oid);
+    if(op.action==='receive') {
+      L.push(`    def ${safe}(self, handler: Callable) -> None:`);
+      L.push(`        """Subscribe: ${ch}"""`);
+      L.push(`        self.on(${JSON.stringify(ch)}, handler)`,'');
+    } else if(op.action==='send') {
+      L.push(`    def ${safe}(self, message: Any) -> None:`);
+      L.push(`        """Publish: ${ch}"""`);
+      L.push(`        raise NotImplementedError('Implement send transport for ${ch}')`,'');
+    }
+    emitted.add(ch);
+  }
+  for (const [ch, item] of Object.entries(channels)) {
+    if(typeof item!=='object') continue;
+    const safe=safeName(ch);
+    if('subscribe' in item && !emitted.has(ch)) {
+      L.push(`    def subscribe_${safe}(self, handler: Callable) -> None:`);
+      L.push(`        """Subscribe to channel: ${ch}"""`);
+      L.push(`        self.on(${JSON.stringify(ch)}, handler)`,'');
+    }
+    if('publish' in item) {
+      L.push(`    def publish_${safe}(self, message: Any) -> None:`);
+      L.push(`        """Publish to channel: ${ch}"""`);
+      L.push(`        raise NotImplementedError('Implement publish transport for ${ch}')`,'');
+    }
+  }
+  return L.join('\n')+'\n';
+}
+
+function generatePython(spec, { useAsync=false, validate=true, baseUrl=null }={}) {
+  const version = detectVersion(spec);
+  if (version === 'asyncapi') return generateAsyncApi(spec);
+  spec = prepareSpec(spec, baseUrl);
+  const resolver = new RefResolver(spec);
+  const info=spec.info||{}, title=info.title||'ApiClient', cName=clsName(title);
+  const specVer=spec.openapi||spec.swagger||'?', verStr=info.version||'';
+  const desc=(info.description||'').trim().slice(0,200);
+  const serverUrls=(spec.servers||[{url:'/'}]).filter(s=>s&&s.url).map(s=>s.url);
+  if(!serverUrls.length) serverUrls.push('/');
+  const secSchemes=(spec.components||{}).securitySchemes||{};
+  const operations = collectOperations(spec, resolver);
+  const L=[];
+  L.push('# Generated by swagger2sdk (browser)',`# Spec:   ${specVer}`,`# Title:  ${title}${verStr?' v'+verStr:''}`,
+    'from __future__ import annotations','','import re','from typing import Any, Dict, List, Optional, Union','',
+    useAsync?'import httpx':'import requests','','',`class ${cName}:`,`    """`,
+    `    ${title}${verStr?' v'+verStr:''}`);
+  if(desc){L.push('    ');L.push(`    ${desc}`);}
+  L.push('    ',`    Spec version: ${specVer}`,'    """','');
+  emitInit(L,serverUrls,secSchemes);
+  for(const op of operations) emitMethod(L,op,resolver,useAsync,validate);
+  const wh=spec.webhooks||{};
+  if(Object.keys(wh).length){
+    L.push('','    # ── Webhooks (OAS 3.1) ─────────────────────────────────────────');
+    for(const [whn,whi] of Object.entries(wh)){
+      if(!whi||typeof whi!=='object') continue;
+      for(const [whm,who] of Object.entries(whi)){
+        if(!who||typeof who!=='object'||['summary','description','parameters'].includes(whm)) continue;
+        const oid=safeName(`webhook_${whn}_${whm}`);
+        L.push('',`    def ${oid}(self, payload: Any = None) -> Any:`,`        """Webhook handler: ${whn} (${whm.toUpperCase()})"""`,`        raise NotImplementedError('Implement webhook handler: ${whn}')`);
+      }
+    }
+  }
+  return L.join('\n')+'\n';
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  JAVASCRIPT GENERATOR
+// ════════════════════════════════════════════════════════════════════════
+
+function jsType(schema, resolver) {
+  if (!schema) return 'any';
+  schema = flattenSchema(schema, resolver);
+  let t = schema.type;
+  if (Array.isArray(t)) t = t.filter(x => x !== 'null')[0] || null;
+  if (t === 'string') return 'string';
+  if (t === 'integer' || t === 'number') return 'number';
+  if (t === 'boolean') return 'boolean';
+  if (t === 'array') {
+    const inner = schema.items ? jsType(schema.items, resolver) : 'any';
+    return `${inner}[]`;
+  }
+  if (t === 'object' || 'properties' in schema) return 'Object';
+  return 'any';
+}
+
+const JS_KWS = new Set(['break','case','catch','continue','debugger','default','delete','do','else',
+  'finally','for','function','if','in','instanceof','new','return','switch','this','throw','try',
+  'typeof','var','void','while','with','class','const','enum','export','extends','import','super',
+  'implements','interface','let','package','private','protected','public','static','yield','async','await']);
+
+function jsParamName(raw) {
+  let n = safeName(raw);
+  if (/^\d/.test(n)) n = '_' + n;
+  const parts = n.split('_').filter(Boolean);
+  const camel = parts[0].toLowerCase() + parts.slice(1).map(p => p[0].toUpperCase() + p.slice(1)).join('');
+  return JS_KWS.has(camel) ? camel + '_' : camel;
+}
+
+function emitMethodJS(L, op, resolver) {
+  const {oid,method,path,params:allP,requestBody:rb,responses,security,deprecated,tags,summary,description} = op;
+  const byLoc = loc => allP.filter(p => p.in === loc);
+  const pathP=byLoc('path'), queryP=byLoc('query'), headerP=byLoc('header');
+  let bodyCt='application/json', bodyP=[];
+  if (rb) { const rr=resolver.deref(rb); [bodyCt,bodyP]=extractBodyParams(rr,resolver); }
+  const isReq = p => !!(p.required || p.in==='path');
+  const ordered=[
+    ...pathP.filter(isReq),...queryP.filter(isReq),...headerP.filter(isReq),...bodyP.filter(isReq),
+    ...pathP.filter(p=>!isReq(p)),...queryP.filter(p=>!isReq(p)),...headerP.filter(p=>!isReq(p)),...bodyP.filter(p=>!isReq(p)),
+  ];
+
+  // JSDoc
+  L.push('');
+  L.push('  /**');
+  if(deprecated) L.push('   * @deprecated');
+  const sum = (summary||'').trim(), desc2 = (description||'').trim();
+  if(sum) L.push(`   * ${sum}`);
+  if(desc2 && desc2 !== sum) L.push(`   * ${desc2}`);
+  L.push(`   * \`${method.toUpperCase()} ${path}\``);
+  if(tags.length) L.push(`   * @tags ${tags.join(', ')}`);
+  for(const p of ordered) {
+    const s=flattenSchema(p.schema||{},resolver), jt=jsType(s,resolver), req=isReq(p);
+    const pn=jsParamName(p.name);
+    L.push(`   * @param {${jt}} ${req?pn:`[${pn}]`} - ${(p.description||'').trim()||p.in}`);
+  }
+  L.push('   * @returns {Promise<any>}');
+  L.push('   */');
+
+  // Signature
+  const paramList = ordered.map(p => {
+    const n=jsParamName(p.name); return isReq(p) ? n : `${n} = undefined`;
+  });
+  L.push(`  async ${safeName(oid)}(${paramList.join(', ')}) {`);
+
+  // URL
+  const urlPath = path.replace(/{(\w+)}/g, (_, k) => `\${${jsParamName(k)}}`);
+  L.push(`    const _url = new URL(\`\${this.baseUrl}${urlPath}\`);`);
+
+  // Query params
+  if(queryP.length) {
+    for(const p of queryP) {
+      const n=jsParamName(p.name), req=isReq(p);
+      if(req) L.push(`    _url.searchParams.set(${JSON.stringify(p.name)}, ${n});`);
+      else L.push(`    if (${n} !== undefined) _url.searchParams.set(${JSON.stringify(p.name)}, ${n});`);
+    }
+  }
+
+  // Fetch options
+  L.push(`    const _opts = { method: ${JSON.stringify(method.toUpperCase())}, headers: { ...this._headers } };`);
+
+  // Extra headers
+  for(const p of headerP) {
+    const n=jsParamName(p.name), req=isReq(p);
+    if(req) L.push(`    _opts.headers[${JSON.stringify(p.name)}] = ${n};`);
+    else L.push(`    if (${n} !== undefined) _opts.headers[${JSON.stringify(p.name)}] = ${n};`);
+  }
+
+  // Body
+  if(bodyP.length) {
+    if(bodyCt.includes('json')) {
+      L.push('    const _body = {};');
+      for(const p of bodyP) {
+        const n=jsParamName(p.name), req=isReq(p);
+        if(req) L.push(`    _body[${JSON.stringify(p.name)}] = ${n};`);
+        else L.push(`    if (${n} !== undefined) _body[${JSON.stringify(p.name)}] = ${n};`);
+      }
+      L.push("    _opts.headers['Content-Type'] = 'application/json';");
+      L.push("    _opts.body = JSON.stringify(_body);");
+    } else if(bodyCt.includes('multipart')) {
+      L.push('    const _form = new FormData();');
+      for(const p of bodyP) {
+        const n=jsParamName(p.name), req=isReq(p);
+        if(req) L.push(`    _form.append(${JSON.stringify(p.name)}, ${n});`);
+        else L.push(`    if (${n} !== undefined) _form.append(${JSON.stringify(p.name)}, ${n});`);
+      }
+      L.push('    _opts.body = _form;');
+    } else {
+      L.push('    const _params = new URLSearchParams();');
+      for(const p of bodyP) {
+        const n=jsParamName(p.name), req=isReq(p);
+        if(req) L.push(`    _params.append(${JSON.stringify(p.name)}, ${n});`);
+        else L.push(`    if (${n} !== undefined) _params.append(${JSON.stringify(p.name)}, ${n});`);
+      }
+      L.push("    _opts.headers['Content-Type'] = 'application/x-www-form-urlencoded';");
+      L.push('    _opts.body = _params.toString();');
+    }
+  }
+
+  // Auth
+  if(security !== undefined && security !== null) {
+    L.push(`    this._applyAuth(_opts, ${JSON.stringify(security)});`);
+  } else {
+    L.push('    this._applyAuth(_opts);');
+  }
+
+  L.push('    const _resp = await fetch(_url.toString(), _opts);');
+  L.push('    if (!_resp.ok) throw new Error(`HTTP ${_resp.status}: ${_resp.statusText}`);');
+  L.push("    const _ct = _resp.headers.get('Content-Type') || '';");
+  L.push("    if (_ct.includes('json')) return _resp.json();");
+  L.push('    return _resp.text();');
+  L.push('  }');
+}
+
+function generateJS(spec, { baseUrl=null }={}) {
+  const version = detectVersion(spec);
+  if (version === 'asyncapi') {
+    return '// AsyncAPI event-driven specs are not yet supported for JavaScript output.\n// Switch to Python for AsyncAPI stub generation.\n';
+  }
+  spec = prepareSpec(spec, baseUrl);
+  const resolver = new RefResolver(spec);
+  const info=spec.info||{}, title=info.title||'ApiClient', cName=clsName(title);
+  const specVer=spec.openapi||spec.swagger||'?', verStr=info.version||'';
+  const desc=(info.description||'').trim().slice(0,200);
+  const serverUrls=(spec.servers||[{url:'/'}]).filter(s=>s&&s.url).map(s=>s.url);
+  if(!serverUrls.length) serverUrls.push('/');
+  const secSchemes=(spec.components||{}).securitySchemes||{};
+  const operations = collectOperations(spec, resolver);
+
+  const L=[];
+  L.push(`// Generated by swagger2sdk (browser)`);
+  L.push(`// Spec:   ${specVer}`);
+  L.push(`// Title:  ${title}${verStr?' v'+verStr:''}`);
+  L.push('');
+  L.push('/* eslint-disable */');
+  L.push('');
+
+  // Class
+  L.push(`/**`);
+  L.push(` * ${title}${verStr?' v'+verStr:''}`);
+  if(desc) L.push(` * ${desc}`);
+  L.push(` * Spec: ${specVer}`);
+  L.push(' */');
+  L.push(`class ${cName} {`);
+
+  // Constructor
+  L.push('  /**');
+  L.push('   * @param {string} [baseUrl] - Base server URL override');
+  L.push('   * @param {Object} [securityConfig] - Auth credentials keyed by scheme name');
+  for(const [n,sc] of Object.entries(secSchemes)) {
+    const t=sc.type||'', s=sc.scheme||'';
+    if(t==='http'&&s==='basic')       L.push(`   *   ${JSON.stringify(n)}: { username, password }`);
+    else if(t==='http'&&s==='bearer') L.push(`   *   ${JSON.stringify(n)}: { token }`);
+    else if(t==='apiKey')             L.push(`   *   ${JSON.stringify(n)}: { apiKey }`);
+    else if(t==='oauth2'||t==='openIdConnect') L.push(`   *   ${JSON.stringify(n)}: { accessToken }`);
+  }
+  L.push('   */');
+  const defaultUrl = serverUrls[0];
+  L.push(`  constructor(baseUrl = ${JSON.stringify(defaultUrl)}, securityConfig = {}) {`);
+  L.push(`    this.baseUrl = baseUrl.replace(/\\/+$/, '');`);
+  L.push('    this._securityConfig = securityConfig;');
+  L.push(`    this._secSchemes = ${JSON.stringify(secSchemes)};`);
+  L.push('    this._headers = {};');
+  L.push('  }');
+  L.push('');
+
+  // _applyAuth
+  L.push('  _applyAuth(opts, opSecurity) {');
+  L.push('    const names = opSecurity');
+  L.push('      ? opSecurity.flatMap(r => typeof r === "string" ? [r] : Object.keys(r))');
+  L.push('      : Object.keys(this._securityConfig);');
+  L.push('    for (const name of names) {');
+  L.push('      const cfg = this._securityConfig[name];');
+  L.push('      if (!cfg) continue;');
+  L.push('      const sc = this._secSchemes[name] || {};');
+  L.push('      const st = sc.type || "";');
+  L.push('      if (st === "http") {');
+  L.push('        if (sc.scheme === "basic") {');
+  L.push('          const encoded = btoa(`${cfg.username}:${cfg.password}`);');
+  L.push('          opts.headers["Authorization"] = `Basic ${encoded}`;');
+  L.push('        } else {');
+  L.push('          opts.headers["Authorization"] = `Bearer ${cfg.token || cfg.accessToken}`;');
+  L.push('        }');
+  L.push('      } else if (st === "apiKey") {');
+  L.push('        const loc = sc.in || "header", keyName = sc.name || name;');
+  L.push('        const val = cfg.apiKey || cfg.api_key || "";');
+  L.push('        if (loc === "header") opts.headers[keyName] = val;');
+  L.push('        else if (loc === "query") { /* added to URL by caller */ }');
+  L.push('      } else if (st === "oauth2" || st === "openIdConnect") {');
+  L.push('        opts.headers["Authorization"] = `Bearer ${cfg.accessToken || cfg.token}`;');
+  L.push('      }');
+  L.push('    }');
+  L.push('  }');
+
+  for(const op of operations) emitMethodJS(L, op, resolver);
+
+  L.push('}');
+  L.push('');
+  L.push(`// CommonJS / ESM dual export`);
+  L.push(`if (typeof module !== 'undefined') module.exports = { ${cName} };`);
+  L.push(`export { ${cName} };`);
+  L.push('');
+  return L.join('\n')+'\n';
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  GO GENERATOR
+// ════════════════════════════════════════════════════════════════════════
+
+const GO_KWS = new Set(['break','default','func','interface','select','case','defer','go','map','struct',
+  'chan','else','goto','package','switch','const','fallthrough','if','range','type','continue','for',
+  'import','return','var','error','string','bool','int','int64','float64','byte','rune']);
+
+function goPublicName(s) {
+  return s.split(/[\s\-_/\.]+/).filter(Boolean)
+    .map(p => p[0].toUpperCase() + p.slice(1)).join('') || 'Method';
+}
+
+function goVarName(s) {
+  let n = safeName(s);
+  const parts = n.split('_').filter(Boolean);
+  const camel = parts[0].toLowerCase() + parts.slice(1).map(p => p[0].toUpperCase() + p.slice(1)).join('');
+  return GO_KWS.has(camel) ? camel + '_' : (camel || 'v');
+}
+
+function goType(schema, resolver) {
+  if (!schema) return 'interface{}';
+  schema = flattenSchema(schema, resolver);
+  let t = schema.type;
+  if (Array.isArray(t)) t = t.filter(x => x !== 'null')[0] || null;
+  if (t === 'string') return 'string';
+  if (t === 'integer') return 'int64';
+  if (t === 'number') return 'float64';
+  if (t === 'boolean') return 'bool';
+  if (t === 'array') {
+    const inner = schema.items ? goType(schema.items, resolver) : 'interface{}';
+    return `[]${inner}`;
+  }
+  if (t === 'object' || 'properties' in schema) return 'map[string]interface{}';
+  return 'interface{}';
+}
+
+function emitMethodGo(L, op, resolver, structName) {
+  const {oid,method,path,params:allP,requestBody:rb,responses,deprecated,summary,description,tags} = op;
+  const byLoc = loc => allP.filter(p => p.in === loc);
+  const pathP=byLoc('path'), queryP=byLoc('query'), headerP=byLoc('header');
+  let bodyCt='application/json', bodyP=[];
+  if (rb) { const rr=resolver.deref(rb); [bodyCt,bodyP]=extractBodyParams(rr,resolver); }
+  const isReq = p => !!(p.required || p.in==='path');
+  const ordered=[
+    ...pathP.filter(isReq),...queryP.filter(isReq),...headerP.filter(isReq),...bodyP.filter(isReq),
+    ...pathP.filter(p=>!isReq(p)),...queryP.filter(p=>!isReq(p)),...headerP.filter(p=>!isReq(p)),...bodyP.filter(p=>!isReq(p)),
+  ];
+
+  L.push('');
+  // Comment block
+  const sum=(summary||'').trim();
+  if(sum) L.push(`// ${goPublicName(oid)} ${sum}`);
+  else    L.push(`// ${goPublicName(oid)} — ${method.toUpperCase()} ${path}`);
+  if(deprecated) L.push('// Deprecated.');
+  if(tags.length) L.push(`// Tags: ${tags.join(', ')}`);
+
+  // Signature
+  const params = ordered.map(p => {
+    const n=goVarName(p.name), t=goType(flattenSchema(p.schema||{},resolver),resolver);
+    return isReq(p) ? `${n} ${t}` : `${n} *${t}`;
+  });
+  L.push(`func (c *${structName}) ${goPublicName(oid)}(${params.join(', ')}) (interface{}, error) {`);
+
+  // Build URL
+  if(pathP.length) {
+    let fmtStr = path, args = [];
+    for(const p of pathP) {
+      const n=goVarName(p.name), t=goType(flattenSchema(p.schema||{},resolver),resolver);
+      const verb = t==='string' ? '%s' : t==='int64' ? '%d' : '%v';
+      fmtStr = fmtStr.replace(`{${p.name}}`, verb);
+      args.push(n);
+    }
+    L.push(`\trawPath := fmt.Sprintf(${JSON.stringify(fmtStr)}, ${args.join(', ')})`);
+    L.push('\t_url := c.BaseURL + rawPath');
+  } else {
+    L.push(`\t_url := c.BaseURL + ${JSON.stringify(path)}`);
+  }
+
+  // Query string
+  if(queryP.length) {
+    L.push('\t_q := url.Values{}');
+    for(const p of queryP) {
+      const n=goVarName(p.name), t=goType(flattenSchema(p.schema||{},resolver),resolver), req=isReq(p);
+      const toStr = t==='string' ? n : (req ? `fmt.Sprintf("%v", ${n})` : `fmt.Sprintf("%v", *${n})`);
+      if(req) L.push(`\t_q.Set(${JSON.stringify(p.name)}, ${toStr})`);
+      else    L.push(`\tif ${n} != nil { _q.Set(${JSON.stringify(p.name)}, ${toStr}) }`);
+    }
+    L.push('\tif len(_q) > 0 { _url += "?" + _q.Encode() }');
+  }
+
+  // Body
+  if(bodyP.length) {
+    L.push('\t_bodyMap := map[string]interface{}{}');
+    for(const p of bodyP) {
+      const n=goVarName(p.name), req=isReq(p);
+      if(req) L.push(`\t_bodyMap[${JSON.stringify(p.name)}] = ${n}`);
+      else    L.push(`\tif ${n} != nil { _bodyMap[${JSON.stringify(p.name)}] = *${n} }`);
+    }
+    L.push('\treturn c.doRequest('+JSON.stringify(method.toUpperCase())+', _url, _bodyMap)');
+  } else {
+    L.push('\treturn c.doRequest('+JSON.stringify(method.toUpperCase())+', _url, nil)');
+  }
+
+  L.push('}');
+}
+
+function generateGo(spec, { baseUrl=null }={}) {
+  const version = detectVersion(spec);
+  if (version === 'asyncapi') {
+    return '// AsyncAPI event-driven specs are not yet supported for Go output.\n// Switch to Python for AsyncAPI stub generation.\n';
+  }
+  spec = prepareSpec(spec, baseUrl);
+  const resolver = new RefResolver(spec);
+  const info=spec.info||{}, title=info.title||'ApiClient', cName=clsName(title)+'Client';
+  const specVer=spec.openapi||spec.swagger||'?', verStr=info.version||'';
+  const desc=(info.description||'').trim().slice(0,200);
+  const serverUrls=(spec.servers||[{url:'/'}]).filter(s=>s&&s.url).map(s=>s.url);
+  if(!serverUrls.length) serverUrls.push('/');
+  const secSchemes=(spec.components||{}).securitySchemes||{};
+  const operations = collectOperations(spec, resolver);
+
+  const pkg = safeName(title.toLowerCase().replace(/\s+/g,'_') || 'apiclient');
+  const L=[];
+  L.push(`// Generated by swagger2sdk (browser)`);
+  L.push(`// Spec:   ${specVer}`);
+  L.push(`// Title:  ${title}${verStr?' v'+verStr:''}`);
+  if(desc) L.push(`// ${desc}`);
+  L.push('');
+  L.push(`package ${pkg}`);
+  L.push('');
+  L.push('import (');
+  L.push('\t"bytes"');
+  L.push('\t"encoding/json"');
+  L.push('\t"fmt"');
+  L.push('\t"io"');
+  L.push('\t"net/http"');
+  L.push('\t"net/url"');
+  L.push(')');
+  L.push('');
+
+  // Client struct
+  L.push(`// ${cName} — ${title}${verStr?' v'+verStr:''}`);
+  L.push(`type ${cName} struct {`);
+  L.push('\tBaseURL        string');
+  L.push('\tHTTPClient     *http.Client');
+  L.push('\tSecurityConfig map[string]interface{}');
+  // Per-scheme field hints as comments
+  for(const [n,sc] of Object.entries(secSchemes)) {
+    const t=sc.type||'', s=sc.scheme||'';
+    if(t==='http'&&s==='basic')       L.push(`\t// ${n}: map["username":"", "password":""]`);
+    else if(t==='http'&&s==='bearer') L.push(`\t// ${n}: map["token":""]`);
+    else if(t==='apiKey')             L.push(`\t// ${n}: map["apiKey":""]`);
+    else if(t==='oauth2')             L.push(`\t// ${n}: map["accessToken":""]`);
+  }
+  L.push('}');
+  L.push('');
+
+  // Constructor
+  const defaultUrl = serverUrls[0];
+  L.push(`// New${cName} creates a new client with the given base URL.`);
+  L.push(`// Pass an empty string to use the default: ${defaultUrl}`);
+  L.push(`func New${cName}(baseURL string, securityConfig map[string]interface{}) *${cName} {`);
+  L.push('\tif baseURL == "" {');
+  L.push(`\t\tbaseURL = ${JSON.stringify(defaultUrl)}`);
+  L.push('\t}');
+  L.push('\treturn &'+cName+'{');
+  L.push('\t\tBaseURL:        baseURL,');
+  L.push('\t\tHTTPClient:     &http.Client{},');
+  L.push('\t\tSecurityConfig: securityConfig,');
+  L.push('\t}');
+  L.push('}');
+  L.push('');
+
+  // applyAuth
+  L.push(`func (c *${cName}) applyAuth(req *http.Request, opSecurity interface{}) {`);
+  L.push('\t_ = opSecurity // reserved for per-operation security overrides');
+  L.push('\tfor name, cfg := range c.SecurityConfig {');
+  L.push('\t\tcfgMap, ok := cfg.(map[string]interface{}); if !ok { continue }');
+  L.push(`\t\tsc := map[string]interface{}${JSON.stringify(secSchemes)}[name]`);
+  L.push('\t\tscMap, _ := sc.(map[string]interface{})');
+  L.push('\t\tst, _ := scMap["type"].(string)');
+  L.push('\t\tswitch st {');
+  L.push('\t\tcase "http":');
+  L.push('\t\t\tscheme, _ := scMap["scheme"].(string)');
+  L.push('\t\t\tif scheme == "basic" {');
+  L.push('\t\t\t\tu, _ := cfgMap["username"].(string); p, _ := cfgMap["password"].(string)');
+  L.push('\t\t\t\treq.SetBasicAuth(u, p)');
+  L.push('\t\t\t} else {');
+  L.push('\t\t\t\ttok, _ := cfgMap["token"].(string)');
+  L.push('\t\t\t\treq.Header.Set("Authorization", "Bearer "+tok)');
+  L.push('\t\t\t}');
+  L.push('\t\tcase "apiKey":');
+  L.push('\t\t\tkeyName, _ := scMap["name"].(string); loc, _ := scMap["in"].(string)');
+  L.push('\t\t\tval, _ := cfgMap["apiKey"].(string)');
+  L.push('\t\t\tif loc == "header" { req.Header.Set(keyName, val) }');
+  L.push('\t\tcase "oauth2", "openIdConnect":');
+  L.push('\t\t\ttok, _ := cfgMap["accessToken"].(string)');
+  L.push('\t\t\treq.Header.Set("Authorization", "Bearer "+tok)');
+  L.push('\t\t}');
+  L.push('\t\t_ = name');
+  L.push('\t}');
+  L.push('}');
+  L.push('');
+
+  // doRequest helper
+  L.push(`func (c *${cName}) doRequest(method, rawURL string, body interface{}) (interface{}, error) {`);
+  L.push('\tvar reqBody io.Reader');
+  L.push('\tif body != nil {');
+  L.push('\t\tb, err := json.Marshal(body)');
+  L.push('\t\tif err != nil { return nil, err }');
+  L.push('\t\treqBody = bytes.NewReader(b)');
+  L.push('\t}');
+  L.push('\treq, err := http.NewRequest(method, rawURL, reqBody)');
+  L.push('\tif err != nil { return nil, err }');
+  L.push('\tif body != nil { req.Header.Set("Content-Type", "application/json") }');
+  L.push('\treq.Header.Set("Accept", "application/json")');
+  L.push('\tc.applyAuth(req, nil)');
+  L.push('\tresp, err := c.HTTPClient.Do(req)');
+  L.push('\tif err != nil { return nil, err }');
+  L.push('\tdefer resp.Body.Close()');
+  L.push('\trespBody, err := io.ReadAll(resp.Body)');
+  L.push('\tif err != nil { return nil, err }');
+  L.push('\tif resp.StatusCode < 200 || resp.StatusCode >= 300 {');
+  L.push('\t\treturn nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(respBody))');
+  L.push('\t}');
+  L.push('\tif len(respBody) == 0 { return nil, nil }');
+  L.push('\tvar result interface{}');
+  L.push('\tif err := json.Unmarshal(respBody, &result); err != nil {');
+  L.push('\t\treturn string(respBody), nil');
+  L.push('\t}');
+  L.push('\treturn result, nil');
+  L.push('}');
+
+  for(const op of operations) emitMethodGo(L, op, resolver, cName);
+
+  L.push('');
+  return L.join('\n')+'\n';
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  C GENERATOR
+// ════════════════════════════════════════════════════════════════════════
+
+const C_KWS = new Set(['auto','break','case','char','const','continue','default','do','double',
+  'else','enum','extern','float','for','goto','if','inline','int','long','register','restrict',
+  'return','short','signed','sizeof','static','struct','switch','typedef','union','unsigned',
+  'void','volatile','while','NULL','null']);
+
+function cVarName(s) {
+  let n = safeName(s).toLowerCase();
+  return C_KWS.has(n) ? n + '_' : (n || 'v');
+}
+
+function cType(schema, resolver, optional) {
+  if (!schema) return 'const char*';
+  schema = flattenSchema(schema, resolver);
+  let t = schema.type;
+  if (Array.isArray(t)) t = t.filter(x => x !== 'null')[0] || null;
+  if (t === 'string') return 'const char*';
+  if (t === 'integer') return optional ? 'int64_t*' : 'int64_t';
+  if (t === 'number')  return optional ? 'double*'  : 'double';
+  if (t === 'boolean') return optional ? 'int*'     : 'int';
+  return 'const char*'; // JSON string for arrays/objects
+}
+
+function emitMethodC(L, op, resolver, prefix, cName) {
+  const {oid, method, path, params:allP, requestBody:rb, summary, deprecated} = op;
+  const byLoc = loc => allP.filter(p => p.in === loc);
+  const pathP=byLoc('path'), queryP=byLoc('query');
+  let bodyCt='application/json', bodyP=[];
+  if (rb) { const rr=resolver.deref(rb); [bodyCt,bodyP]=extractBodyParams(rr,resolver); }
+  const isReq = p => !!(p.required || p.in==='path');
+  const ordered=[
+    ...pathP.filter(isReq),...queryP.filter(isReq),...bodyP.filter(isReq),
+    ...pathP.filter(p=>!isReq(p)),...queryP.filter(p=>!isReq(p)),...bodyP.filter(p=>!isReq(p)),
+  ];
+
+  const fnName = `${prefix}_${safeName(oid).toLowerCase()}`;
+  const sum = (summary||'').trim();
+  if (sum) L.push(`/* ${sum} */`);
+  if (deprecated) L.push('/* @deprecated */');
+  L.push(`/* ${method.toUpperCase()} ${path} */`);
+
+  const sigParams = [`${cName}Client *c`, ...ordered.map(p => {
+    const s=flattenSchema(p.schema||{},resolver), req=isReq(p);
+    return `${cType(s,resolver,!req)} ${cVarName(p.name)}`;
+  })];
+  L.push(`char *${fnName}(${sigParams.join(', ')}) {`);
+
+  // Build URL
+  L.push('    char _url[8192];');
+  let fmtStr = path, fmtArgs = [];
+  for (const p of pathP) {
+    const n=cVarName(p.name), t=cType(flattenSchema(p.schema||{},resolver),resolver,false);
+    let verb;
+    if (t==='int64_t') { verb='%lld'; fmtArgs.push(`(long long)${n}`); }
+    else if (t==='double') { verb='%g'; fmtArgs.push(n); }
+    else { verb='%s'; fmtArgs.push(n); }
+    fmtStr = fmtStr.replace(`{${p.name}}`, verb);
+  }
+  if (fmtArgs.length)
+    L.push(`    snprintf(_url, sizeof(_url), "%s${fmtStr}", c->base_url, ${fmtArgs.join(', ')});`);
+  else
+    L.push(`    snprintf(_url, sizeof(_url), "%s${fmtStr}", c->base_url);`);
+
+  // Query params
+  if (queryP.length) {
+    L.push('    { char _q[2048]=""; int _f=1;');
+    for (const p of queryP) {
+      const n=cVarName(p.name), t=cType(flattenSchema(p.schema||{},resolver),resolver,!isReq(p)), req=isReq(p);
+      const isPtr = t==='int64_t*'||t==='double*'||t==='int*';
+      const isStr = t==='const char*';
+      const deref = isPtr ? `*${n}` : n;
+      const cast  = (t==='int64_t'||t==='int64_t*') ? `(long long)${deref}` : deref;
+      const verb  = (t==='int64_t'||t==='int64_t*') ? '%lld' : (t==='double'||t==='double*') ? '%g' : (t==='int'||t==='int*') ? '%d' : '%s';
+      const check = !req ? (isStr ? `if (${n} != NULL) ` : `if (${n} != NULL) `) : '';
+      L.push(`    ${check}{ snprintf(_q+strlen(_q),sizeof(_q)-strlen(_q),"%s${p.name}=${verb}",_f?"?":"&",${cast}); _f=0; }`);
+    }
+    L.push('    strncat(_url,_q,sizeof(_url)-strlen(_url)-1); }');
+  }
+
+  // Body
+  if (bodyP.length && bodyCt.includes('json')) {
+    L.push('    char _body[65536]; /* increase for large payloads */');
+    const fParts=[], fVals=[];
+    for (const p of bodyP.filter(p=>isReq(p))) {
+      const n=cVarName(p.name), t=cType(flattenSchema(p.schema||{},resolver),resolver,false);
+      if (t==='const char*') { fParts.push(`\\"${p.name}\\":\\"%s\\"`); fVals.push(n); }
+      else if (t==='int64_t') { fParts.push(`\\"${p.name}\\":%lld`); fVals.push(`(long long)${n}`); }
+      else if (t==='double')  { fParts.push(`\\"${p.name}\\":%g`);   fVals.push(n); }
+      else                    { fParts.push(`\\"${p.name}\\":%d`);   fVals.push(n); }
+    }
+    if (fParts.length)
+      L.push(`    snprintf(_body,sizeof(_body),"{${fParts.join(',')}}"${fVals.length?','+fVals.join(','):''});`);
+    else
+      L.push('    strcpy(_body, "{}");');
+    L.push(`    return ${prefix}_request(c, "${method.toUpperCase()}", _url, _body);`);
+  } else {
+    L.push(`    return ${prefix}_request(c, "${method.toUpperCase()}", _url, NULL);`);
+  }
+  L.push('}', '');
+}
+
+function generateC(spec, { baseUrl=null }={}) {
+  const version = detectVersion(spec);
+  if (version === 'asyncapi') return '/* AsyncAPI is not supported for C output. */\n';
+  spec = prepareSpec(spec, baseUrl);
+  const resolver = new RefResolver(spec);
+  const info=spec.info||{}, title=info.title||'ApiClient';
+  const cName = clsName(title);
+  const prefix = cName.toLowerCase();
+  const specVer=spec.openapi||spec.swagger||'?', verStr=info.version||'';
+  const serverUrls=(spec.servers||[{url:'/'}]).filter(s=>s&&s.url).map(s=>s.url);
+  if (!serverUrls.length) serverUrls.push('/');
+  const operations = collectOperations(spec, resolver);
+
+  const L=[];
+  L.push(`/* Generated by swagger2sdk — ${title}${verStr?' v'+verStr:''} (${specVer}) */`);
+  L.push(`/* Requires: libcurl  (cc … -lcurl) */`,'');
+  L.push('#include <stdio.h>','#include <stdlib.h>','#include <string.h>',
+         '#include <stdint.h>','#include <curl/curl.h>','');
+
+  // Response buffer
+  L.push('typedef struct { char *data; size_t len; } _RespBuf;');
+  L.push(`static size_t _${prefix}_write(void *p, size_t sz, size_t n, _RespBuf *b) {`);
+  L.push('    size_t r=sz*n;');
+  L.push('    b->data=realloc(b->data,b->len+r+1);');
+  L.push('    memcpy(b->data+b->len,p,r); b->len+=r; b->data[b->len]=0;');
+  L.push('    return r;', '}', '');
+
+  // Client struct
+  L.push(`typedef struct ${cName}Client {`);
+  L.push('    const char *base_url;');
+  L.push('    const char *bearer_token; /* optional */');
+  L.push('    const char *api_key;      /* optional */');
+  L.push('    const char *api_key_header; /* header name for api_key */');
+  L.push(`} ${cName}Client;`, '');
+
+  // Constructor
+  L.push(`${cName}Client *${prefix}_new(const char *base_url) {`);
+  L.push(`    ${cName}Client *c = calloc(1, sizeof(${cName}Client));`);
+  L.push(`    c->base_url = base_url ? base_url : ${JSON.stringify(serverUrls[0])};`);
+  L.push('    return c;', '}', '');
+  L.push(`void ${prefix}_free(${cName}Client *c) { free(c); }`, '');
+
+  // Internal request helper
+  L.push(`/* Returns malloc'd string — caller must free(). Returns NULL on error. */`);
+  L.push(`char *${prefix}_request(${cName}Client *c, const char *method, const char *url, const char *body) {`);
+  L.push('    CURL *curl = curl_easy_init(); if (!curl) return NULL;');
+  L.push('    _RespBuf resp = {0};');
+  L.push('    curl_easy_setopt(curl, CURLOPT_URL, url);');
+  L.push('    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _'+prefix+'_write);');
+  L.push('    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &resp);');
+  L.push('    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, method);');
+  L.push('    struct curl_slist *hdrs = NULL;');
+  L.push('    hdrs = curl_slist_append(hdrs, "Accept: application/json");');
+  L.push('    if (body) {');
+  L.push('        hdrs = curl_slist_append(hdrs, "Content-Type: application/json");');
+  L.push('        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);');
+  L.push('    }');
+  L.push('    if (c->bearer_token) {');
+  L.push('        char _auth[512]; snprintf(_auth,sizeof(_auth),"Authorization: Bearer %s",c->bearer_token);');
+  L.push('        hdrs = curl_slist_append(hdrs, _auth);');
+  L.push('    } else if (c->api_key) {');
+  L.push('        char _ak[512]; snprintf(_ak,sizeof(_ak),"%s: %s", c->api_key_header?c->api_key_header:"X-API-Key", c->api_key);');
+  L.push('        hdrs = curl_slist_append(hdrs, _ak);');
+  L.push('    }');
+  L.push('    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hdrs);');
+  L.push('    curl_easy_perform(curl);');
+  L.push('    curl_slist_free_all(hdrs);');
+  L.push('    curl_easy_cleanup(curl);');
+  L.push('    return resp.data;');
+  L.push('}', '');
+
+  for (const op of operations) emitMethodC(L, op, resolver, prefix, cName);
+
+  return L.join('\n')+'\n';
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  C++ GENERATOR
+// ════════════════════════════════════════════════════════════════════════
+
+function cppType(schema, resolver, optional) {
+  if (!schema) return optional ? 'std::optional<std::string>' : 'const std::string&';
+  schema = flattenSchema(schema, resolver);
+  let t = schema.type;
+  if (Array.isArray(t)) t = t.filter(x => x !== 'null')[0] || null;
+  let base;
+  if (t === 'string')  base = 'std::string';
+  else if (t === 'integer') base = 'int64_t';
+  else if (t === 'number')  base = 'double';
+  else if (t === 'boolean') base = 'bool';
+  else base = 'std::string'; // JSON string for arrays/objects
+  if (optional) return `std::optional<${base}>`;
+  return base === 'std::string' ? 'const std::string&' : base;
+}
+
+function emitMethodCPP(L, op, resolver, cName) {
+  const {oid, method, path, params:allP, requestBody:rb, summary, deprecated, tags} = op;
+  const byLoc = loc => allP.filter(p => p.in === loc);
+  const pathP=byLoc('path'), queryP=byLoc('query'), headerP=byLoc('header');
+  let bodyCt='application/json', bodyP=[];
+  if (rb) { const rr=resolver.deref(rb); [bodyCt,bodyP]=extractBodyParams(rr,resolver); }
+  const isReq = p => !!(p.required || p.in==='path');
+  const ordered=[
+    ...pathP.filter(isReq),...queryP.filter(isReq),...headerP.filter(isReq),...bodyP.filter(isReq),
+    ...pathP.filter(p=>!isReq(p)),...queryP.filter(p=>!isReq(p)),...headerP.filter(p=>!isReq(p)),...bodyP.filter(p=>!isReq(p)),
+  ];
+
+  L.push('');
+  const sum=(summary||'').trim();
+  if (sum) L.push(`  // ${sum}`);
+  if (deprecated) L.push('  // @deprecated');
+  L.push(`  // ${method.toUpperCase()} ${path}`);
+  if (tags.length) L.push(`  // Tags: ${tags.join(', ')}`);
+
+  const sigParams = ordered.map(p => {
+    const s=flattenSchema(p.schema||{},resolver), req=isReq(p);
+    const t=cppType(s,resolver,!req);
+    const n=goVarName(p.name); // reuse camelCase helper
+    return `${t} ${n}`;
+  });
+  L.push(`  std::string ${safeName(oid)}(${sigParams.join(', ')}) {`);
+
+  // URL — build with std::string
+  if (pathP.length) {
+    L.push(`    std::string _url = baseUrl_ + "${path}";`);
+    for (const p of pathP) {
+      const n=goVarName(p.name), s=flattenSchema(p.schema||{},resolver), t=cppType(s,resolver,false);
+      const toStr = t==='const std::string&'||t==='std::string' ? n : `std::to_string(${n})`;
+      L.push(`    { size_t _p=_url.find("{${p.name}}"); if(_p!=std::string::npos) _url.replace(_p,${p.name.length+2},${toStr}); }`);
+    }
+  } else {
+    L.push(`    std::string _url = baseUrl_ + "${path}";`);
+  }
+
+  // Query params
+  if (queryP.length) {
+    L.push('    std::string _q;');
+    for (const p of queryP) {
+      const n=goVarName(p.name), s=flattenSchema(p.schema||{},resolver), req=isReq(p);
+      const t=cppType(s,resolver,!req);
+      const isOpt = t.startsWith('std::optional');
+      const innerT = isOpt ? t.replace('std::optional<','').replace('>','') : t;
+      const baseT = innerT==='const std::string&'||innerT==='std::string' ? 'str' : 'num';
+      const val = isOpt ? `${n}.value()` : n;
+      const toStr = baseT==='str' ? val : `std::to_string(${val})`;
+      const cond = isOpt ? `if (${n}.has_value()) ` : '';
+      L.push(`    ${cond}{ _q += (_q.empty()?"?":"&"); _q += "${p.name}="; _q += ${toStr}; }`);
+    }
+    L.push('    _url += _q;');
+  }
+
+  // Body
+  const hasBody = bodyP.length > 0 && bodyCt.includes('json');
+  if (hasBody) {
+    L.push('    std::string _body = "{";');
+    L.push('    bool _bf = true;');
+    for (const p of bodyP) {
+      const n=goVarName(p.name), s=flattenSchema(p.schema||{},resolver), req=isReq(p);
+      const t=cppType(s,resolver,!req);
+      const isOpt=t.startsWith('std::optional');
+      const val=isOpt?`${n}.value()`:n;
+      const isStr=(t==='const std::string&'||t==='std::string'||t.includes('string'));
+      const valExpr=isStr?`"\\""+${val}+"\\""`:(`std::to_string(${val})`);
+      const field=`(!_bf?",":"")+std::string("\\"${p.name}\\":") + ${valExpr}`;
+      if(isOpt) L.push(`    if (${n}.has_value()) { _body += ${field}; _bf=false; }`);
+      else      L.push(`    _body += ${field}; _bf=false;`);
+    }
+    L.push('    _body += "}";');
+    L.push(`    return doRequest_("${method.toUpperCase()}", _url, _body);`);
+  } else {
+    L.push(`    return doRequest_("${method.toUpperCase()}", _url, "");`);
+  }
+  L.push('  }');
+}
+
+function generateCPP(spec, { baseUrl=null }={}) {
+  const version = detectVersion(spec);
+  if (version === 'asyncapi') return '// AsyncAPI is not supported for C++ output.\n';
+  spec = prepareSpec(spec, baseUrl);
+  const resolver = new RefResolver(spec);
+  const info=spec.info||{}, title=info.title||'ApiClient', cName=clsName(title);
+  const specVer=spec.openapi||spec.swagger||'?', verStr=info.version||'';
+  const serverUrls=(spec.servers||[{url:'/'}]).filter(s=>s&&s.url).map(s=>s.url);
+  if (!serverUrls.length) serverUrls.push('/');
+  const secSchemes=(spec.components||{}).securitySchemes||{};
+  const operations = collectOperations(spec, resolver);
+  const defaultUrl = serverUrls[0];
+
+  const L=[];
+  L.push(`// Generated by swagger2sdk — ${title}${verStr?' v'+verStr:''} (${specVer})`);
+  L.push('// Requires: libcurl  (g++ -std=c++17 … -lcurl)','');
+  L.push('#pragma once','');
+  L.push('#include <string>','#include <map>','#include <optional>','#include <stdexcept>',
+         '#include <cstdint>','#include <curl/curl.h>','');
+
+  L.push(`class ${cName} {`);
+  L.push(' public:');
+
+  // Constructor
+  L.push(`  explicit ${cName}(`);
+  L.push(`      const std::string& baseUrl = ${JSON.stringify(defaultUrl)},`);
+  L.push('      const std::map<std::string, std::string>& auth = {})');
+  L.push(`    : baseUrl_(baseUrl), auth_(auth) {}`);
+  L.push('');
+
+  // Auth setter helpers
+  L.push('  void setBearerToken(const std::string& t) { auth_["bearer"] = t; }');
+  L.push('  void setApiKey(const std::string& k, const std::string& v = "X-API-Key") {');
+  L.push('    auth_["apiKey"] = k; auth_["apiKeyHeader"] = v;');
+  L.push('  }', '');
+
+  for (const op of operations) emitMethodCPP(L, op, resolver, cName);
+
+  L.push('', ' private:');
+  L.push('  std::string baseUrl_;');
+  L.push('  std::map<std::string, std::string> auth_;');
+  L.push('');
+
+  // Write callback
+  L.push('  struct RespBuf_ { std::string data; };');
+  L.push('  static size_t write_(void* p, size_t sz, size_t n, RespBuf_* b) {');
+  L.push('    b->data.append(static_cast<char*>(p), sz*n); return sz*n;');
+  L.push('  }', '');
+
+  // doRequest_
+  L.push('  std::string doRequest_(const std::string& method, const std::string& url, const std::string& body) {');
+  L.push('    CURL* curl = curl_easy_init();');
+  L.push('    if (!curl) throw std::runtime_error("curl_easy_init failed");');
+  L.push('    RespBuf_ resp;');
+  L.push('    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());');
+  L.push('    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_);');
+  L.push('    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &resp);');
+  L.push('    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, method.c_str());');
+  L.push('    struct curl_slist* hdrs = nullptr;');
+  L.push('    hdrs = curl_slist_append(hdrs, "Accept: application/json");');
+  L.push('    if (!body.empty()) {');
+  L.push('      hdrs = curl_slist_append(hdrs, "Content-Type: application/json");');
+  L.push('      curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());');
+  L.push('    }');
+  L.push('    auto it = auth_.find("bearer");');
+  L.push('    if (it != auth_.end()) {');
+  L.push('      std::string h = "Authorization: Bearer " + it->second;');
+  L.push('      hdrs = curl_slist_append(hdrs, h.c_str());');
+  L.push('    }');
+  L.push('    auto kit = auth_.find("apiKey");');
+  L.push('    if (kit != auth_.end()) {');
+  L.push('      auto hdr = auth_.count("apiKeyHeader") ? auth_.at("apiKeyHeader") : "X-API-Key";');
+  L.push('      std::string h = hdr + ": " + kit->second;');
+  L.push('      hdrs = curl_slist_append(hdrs, h.c_str());');
+  L.push('    }');
+  L.push('    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hdrs);');
+  L.push('    CURLcode rc = curl_easy_perform(curl);');
+  L.push('    long status = 0; curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status);');
+  L.push('    curl_slist_free_all(hdrs); curl_easy_cleanup(curl);');
+  L.push('    if (rc != CURLE_OK) throw std::runtime_error(curl_easy_strerror(rc));');
+  L.push('    if (status < 200 || status >= 300)');
+  L.push('      throw std::runtime_error("HTTP " + std::to_string(status) + ": " + resp.data);');
+  L.push('    return resp.data;');
+  L.push('  }');
+  L.push('};','');
+  return L.join('\n')+'\n';
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  C# GENERATOR
+// ════════════════════════════════════════════════════════════════════════
+
+const CS_KWS = new Set(['abstract','as','base','bool','break','byte','case','catch','char',
+  'checked','class','const','continue','decimal','default','delegate','do','double','else',
+  'enum','event','explicit','extern','false','finally','fixed','float','for','foreach','goto',
+  'if','implicit','in','int','interface','internal','is','lock','long','namespace','new','null',
+  'object','operator','out','override','params','private','protected','public','readonly','ref',
+  'return','sbyte','sealed','short','sizeof','stackalloc','static','string','struct','switch',
+  'this','throw','true','try','typeof','uint','ulong','unchecked','unsafe','ushort','using',
+  'virtual','void','volatile','while','async','await','var','dynamic','record','init','get','set',
+  'value','where','yield','global','partial','required','file','scoped']);
+
+function csParamName(raw) {
+  let n = safeName(raw);
+  const parts = n.split('_').filter(Boolean);
+  const camel = parts[0].toLowerCase() + parts.slice(1).map(p => p[0].toUpperCase() + p.slice(1)).join('');
+  const safe = camel || 'param';
+  return CS_KWS.has(safe) ? '@' + safe : safe;
+}
+
+function csMethodName(raw) {
+  return safeName(raw).split(/[_\s]+/).filter(Boolean)
+    .map(p => p[0].toUpperCase() + p.slice(1)).join('') || 'Method';
+}
+
+function csType(schema, resolver, optional) {
+  if (!schema) return optional ? 'string?' : 'string';
+  schema = flattenSchema(schema, resolver);
+  let t = schema.type;
+  if (Array.isArray(t)) t = t.filter(x => x !== 'null')[0] || null;
+  let base;
+  if (t === 'string')  base = 'string';
+  else if (t === 'integer') base = 'long';
+  else if (t === 'number')  base = 'double';
+  else if (t === 'boolean') base = 'bool';
+  else if (t === 'array')   base = 'JsonElement';
+  else if (t === 'object' || 'properties' in schema) base = 'JsonElement';
+  else base = 'JsonElement';
+  if (optional) return base === 'string' ? 'string?' : `${base}?`;
+  return base;
+}
+
+function emitMethodCS(L, op, resolver) {
+  const {oid, method, path, params:allP, requestBody:rb, summary, description, deprecated, tags, responses} = op;
+  const byLoc = loc => allP.filter(p => p.in === loc);
+  const pathP=byLoc('path'), queryP=byLoc('query'), headerP=byLoc('header');
+  let bodyCt='application/json', bodyP=[];
+  if (rb) { const rr=resolver.deref(rb); [bodyCt,bodyP]=extractBodyParams(rr,resolver); }
+  const isReq = p => !!(p.required || p.in==='path');
+  const ordered=[
+    ...pathP.filter(isReq),...queryP.filter(isReq),...headerP.filter(isReq),...bodyP.filter(isReq),
+    ...pathP.filter(p=>!isReq(p)),...queryP.filter(p=>!isReq(p)),...headerP.filter(p=>!isReq(p)),...bodyP.filter(p=>!isReq(p)),
+  ];
+
+  L.push('');
+  // XML doc
+  const sum = (summary||'').trim(), desc2=(description||'').trim();
+  L.push('    /// <summary>');
+  if (sum) L.push(`    /// ${sum}`);
+  if (desc2 && desc2 !== sum) L.push(`    /// ${desc2}`);
+  L.push(`    /// <para><c>${method.toUpperCase()} ${path}</c></para>`);
+  if (tags.length) L.push(`    /// <para>Tags: ${tags.join(', ')}</para>`);
+  L.push('    /// </summary>');
+  for (const p of ordered) {
+    const n=csParamName(p.name), s=flattenSchema(p.schema||{},resolver);
+    const extra = s.enum ? ` Allowed: ${JSON.stringify(s.enum)}.` : '';
+    L.push(`    /// <param name="${n}">${(p.description||'').trim()||p.in}${extra}</param>`);
+  }
+  if (deprecated) L.push('    [Obsolete]');
+
+  // Signature
+  const sigParams = ordered.map(p => {
+    const n=csParamName(p.name), s=flattenSchema(p.schema||{},resolver), req=isReq(p);
+    const t=csType(s,resolver,!req);
+    return req ? `${t} ${n}` : `${t} ${n} = null`;
+  });
+  const methodName = csMethodName(oid);
+  L.push(`    public async Task<JsonElement?> ${methodName}Async(${sigParams.join(', ')})`);
+  L.push('    {');
+
+  // URL
+  let urlExpr = path;
+  for (const p of pathP) {
+    const n=csParamName(p.name), t=csType(flattenSchema(p.schema||{},resolver),resolver,false);
+    const toStr = t==='string' ? n : `${n}.ToString()`;
+    urlExpr = urlExpr.replace(`{${p.name}}`, `{Uri.EscapeDataString(${toStr})}`);
+  }
+  L.push(`        var _url = $"{{_baseUrl}}${urlExpr}";`);
+
+  // Query params
+  if (queryP.length) {
+    L.push('        var _qs = new System.Collections.Generic.List<string>();');
+    for (const p of queryP) {
+      const n=csParamName(p.name), s=flattenSchema(p.schema||{},resolver), req=isReq(p);
+      const t=csType(s,resolver,!req);
+      const isNullable = !req;
+      const toStr = t==='string'||t==='string?' ? `Uri.EscapeDataString(${n})` : `${n}${isNullable?'.Value':''}.ToString()`;
+      const guard = isNullable ? (t==='string?'?`if (${n} != null) `:`if (${n}.HasValue) `) : '';
+      L.push(`        ${guard}_qs.Add($"${p.name}={${toStr}}");`);
+    }
+    L.push('        if (_qs.Count > 0) _url += "?" + string.Join("&", _qs);');
+  }
+
+  // Headers
+  const dynamicHeaders = headerP.filter(p => !isReq(p) || true);
+
+  // Body
+  const hasJsonBody = bodyP.length > 0 && bodyCt.includes('json');
+  const hasFormBody  = bodyP.length > 0 && (bodyCt.includes('form') || bodyCt.includes('multipart'));
+
+  if (hasJsonBody) {
+    L.push('        var _bodyDict = new System.Collections.Generic.Dictionary<string, object?>();');
+    for (const p of bodyP) {
+      const n=csParamName(p.name), req=isReq(p);
+      if (req) L.push(`        _bodyDict[${JSON.stringify(p.name)}] = ${n};`);
+      else     L.push(`        if (${n} != null) _bodyDict[${JSON.stringify(p.name)}] = ${n};`);
+    }
+    L.push('        var _json = JsonSerializer.Serialize(_bodyDict);');
+    L.push('        using var _content = new StringContent(_json, System.Text.Encoding.UTF8, "application/json");');
+  } else if (hasFormBody) {
+    L.push('        var _formItems = new System.Collections.Generic.List<KeyValuePair<string,string>>();');
+    for (const p of bodyP) {
+      const n=csParamName(p.name), req=isReq(p);
+      if (req) L.push(`        _formItems.Add(new KeyValuePair<string,string>(${JSON.stringify(p.name)}, ${n}?.ToString() ?? ""));`);
+      else     L.push(`        if (${n} != null) _formItems.Add(new KeyValuePair<string,string>(${JSON.stringify(p.name)}, ${n}.ToString()!));`);
+    }
+    L.push('        using var _content = new FormUrlEncodedContent(_formItems);');
+  }
+
+  const contentArg = (hasJsonBody || hasFormBody) ? '_content' : 'null';
+
+  // Extra request headers
+  if (dynamicHeaders.length) {
+    L.push('        using var _req = new HttpRequestMessage(new HttpMethod(' + JSON.stringify(method.toUpperCase()) + '), _url);');
+    if (hasJsonBody || hasFormBody) L.push('        _req.Content = _content;');
+    for (const p of dynamicHeaders) {
+      const n=csParamName(p.name), req=isReq(p);
+      const guard = req ? '' : `if (${n} != null) `;
+      L.push(`        ${guard}_req.Headers.TryAddWithoutValidation(${JSON.stringify(p.name)}, ${n}${req?'':' !'});`);
+    }
+    L.push('        using var _resp = await _http.SendAsync(_req);');
+  } else {
+    const m = method.toLowerCase();
+    if (m === 'get')    L.push('        using var _resp = await _http.GetAsync(_url);');
+    else if (m === 'delete') L.push('        using var _resp = await _http.DeleteAsync(_url);');
+    else if (m === 'post')  L.push(`        using var _resp = await _http.PostAsync(_url, ${contentArg});`);
+    else if (m === 'put')   L.push(`        using var _resp = await _http.PutAsync(_url, ${contentArg});`);
+    else {
+      L.push(`        using var _req = new HttpRequestMessage(new HttpMethod(${JSON.stringify(method.toUpperCase())}), _url);`);
+      if (hasJsonBody || hasFormBody) L.push('        _req.Content = _content;');
+      L.push('        using var _resp = await _http.SendAsync(_req);');
+    }
+  }
+
+  L.push('        _resp.EnsureSuccessStatusCode();');
+  L.push('        var _body = await _resp.Content.ReadAsStringAsync();');
+  L.push('        if (string.IsNullOrWhiteSpace(_body)) return null;');
+  L.push('        return JsonSerializer.Deserialize<JsonElement>(_body);');
+  L.push('    }');
+}
+
+function generateCSharp(spec, { baseUrl=null }={}) {
+  const version = detectVersion(spec);
+  if (version === 'asyncapi') return '// AsyncAPI is not supported for C# output.\n';
+  spec = prepareSpec(spec, baseUrl);
+  const resolver = new RefResolver(spec);
+  const info=spec.info||{}, title=info.title||'ApiClient', cName=clsName(title);
+  const specVer=spec.openapi||spec.swagger||'?', verStr=info.version||'';
+  const desc=(info.description||'').trim().slice(0,200);
+  const serverUrls=(spec.servers||[{url:'/'}]).filter(s=>s&&s.url).map(s=>s.url);
+  if (!serverUrls.length) serverUrls.push('/');
+  const secSchemes=(spec.components||{}).securitySchemes||{};
+  const operations = collectOperations(spec, resolver);
+  const defaultUrl = serverUrls[0];
+  const ns = clsName(title.replace(/\s+/g,'') || 'GeneratedClient');
+
+  const L=[];
+  L.push(`// Generated by swagger2sdk — ${title}${verStr?' v'+verStr:''} (${specVer})`);
+  L.push('// Target: .NET 6+  (System.Text.Json, HttpClient)');
+  L.push('');
+  L.push('using System;');
+  L.push('using System.Collections.Generic;');
+  L.push('using System.Net.Http;');
+  L.push('using System.Net.Http.Headers;');
+  L.push('using System.Text;');
+  L.push('using System.Text.Json;');
+  L.push('using System.Threading;');
+  L.push('using System.Threading.Tasks;');
+  L.push('');
+  L.push(`namespace ${ns};`, '');
+
+  // Class summary
+  L.push('/// <summary>');
+  L.push(`/// ${title}${verStr?' v'+verStr:''}`);
+  if (desc) L.push(`/// ${desc}`);
+  L.push(`/// <para>Spec: ${specVer}</para>`);
+  L.push('/// </summary>');
+  L.push(`public sealed class ${cName} : IDisposable`);
+  L.push('{');
+
+  // Fields
+  L.push('    private readonly HttpClient _http;');
+  L.push('    private readonly bool _disposeHttp;');
+  L.push('    private readonly string _baseUrl;', '');
+
+  // Constructor
+  L.push('    /// <summary>');
+  L.push(`    /// Creates a new <see cref="${cName}"/> instance.`);
+  L.push('    /// </summary>');
+  L.push('    /// <param name="baseUrl">Base URL override. Defaults to the first server in the spec.</param>');
+  L.push('    /// <param name="httpClient">Optional pre-configured <see cref="HttpClient"/>. If null a new one is created.</param>');
+  L.push('    /// <remarks>');
+  L.push('    /// Security config examples:');
+  for (const [n, sc] of Object.entries(secSchemes)) {
+    const t=sc.type||'', s=sc.scheme||'';
+    if (t==='http'&&s==='bearer') L.push(`    ///   SetBearerToken("…")  // ${n}`);
+    else if (t==='http'&&s==='basic') L.push(`    ///   SetBasicAuth("user","pass")  // ${n}`);
+    else if (t==='apiKey') L.push(`    ///   SetApiKey("…", ${JSON.stringify(sc.name||'X-Api-Key')})  // ${n}`);
+    else if (t==='oauth2'||t==='openIdConnect') L.push(`    ///   SetBearerToken("…")  // ${n} (OAuth2)`);
+  }
+  L.push('    /// </remarks>');
+  L.push(`    public ${cName}(string? baseUrl = null, HttpClient? httpClient = null)`);
+  L.push('    {');
+  L.push(`        _baseUrl = (baseUrl ?? ${JSON.stringify(defaultUrl)}).TrimEnd('/');`);
+  L.push('        _disposeHttp = httpClient is null;');
+  L.push('        _http = httpClient ?? new HttpClient();');
+  L.push('        _http.DefaultRequestHeaders.Accept.Add(');
+  L.push('            new MediaTypeWithQualityHeaderValue("application/json"));');
+  L.push('    }', '');
+
+  // Auth helpers
+  L.push('    /// <summary>Sets a Bearer token on all requests.</summary>');
+  L.push('    public void SetBearerToken(string token)');
+  L.push('        => _http.DefaultRequestHeaders.Authorization =');
+  L.push('               new AuthenticationHeaderValue("Bearer", token);', '');
+
+  L.push('    /// <summary>Sets HTTP Basic auth on all requests.</summary>');
+  L.push('    public void SetBasicAuth(string username, string password)');
+  L.push('        => _http.DefaultRequestHeaders.Authorization =');
+  L.push('               new AuthenticationHeaderValue("Basic",');
+  L.push('                   Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}")));', '');
+
+  L.push('    /// <summary>Adds a fixed API key header on all requests.</summary>');
+  L.push('    public void SetApiKey(string key, string headerName = "X-API-Key")');
+  L.push('    {');
+  L.push('        _http.DefaultRequestHeaders.Remove(headerName);');
+  L.push('        _http.DefaultRequestHeaders.Add(headerName, key);');
+  L.push('    }', '');
+
+  // Methods
+  for (const op of operations) emitMethodCS(L, op, resolver);
+
+  // Dispose
+  L.push('');
+  L.push('    /// <inheritdoc/>');
+  L.push('    public void Dispose() { if (_disposeHttp) _http.Dispose(); }');
+  L.push('}');
+  L.push('');
+
+  return L.join('\n')+'\n';
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  DISPATCHER
+// ════════════════════════════════════════════════════════════════════════
+
+function generateForLang(spec, { language='python', useAsync=false, validate=true, baseUrl=null }={}) {
+  if (language === 'javascript') return generateJS(spec, { baseUrl });
+  if (language === 'go')         return generateGo(spec, { baseUrl });
+  if (language === 'c')          return generateC(spec, { baseUrl });
+  if (language === 'cpp')        return generateCPP(spec, { baseUrl });
+  if (language === 'csharp')     return generateCSharp(spec, { baseUrl });
+  return generatePython(spec, { useAsync, validate, baseUrl });
+}
+
+// ── Spec info ─────────────────────────────────────────────────────────
+function specInfo(spec) {
+  const s=JSON.parse(JSON.stringify(spec));
+  const version=detectVersion(s);
+  const ns=version==='swagger2'?normaliseSwagger2(s):s;
+  const info=ns.info||{}, paths=ns.paths||{};
+  const ops=Object.values(paths).reduce((acc,pi)=>{
+    if(!pi||typeof pi!=='object') return acc;
+    return acc+['get','post','put','patch','delete','head','options','trace'].filter(m=>m in pi).length;
+  },0);
+  const schemas=Object.keys((ns.components||{}).schemas||{}).length;
+  const sec=Object.keys((ns.components||{}).securitySchemes||{});
+  const servers=(ns.servers||[]).map(s=>s.url).filter(Boolean);
+  return { format:version, title:info.title||'', version:info.version||'',
+    description:(info.description||'').slice(0,200),
+    paths:Object.keys(paths).length, operations:ops, schemas, security:sec,
+    servers, webhooks:Object.keys(ns.webhooks||{}).length, channels:Object.keys(ns.channels||{}).length };
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  UI
+// ═══════════════════════════════════════════════════════════════════════
+let currentSpec=null, currentCode='', currentFilename='output.py', currentLang='python';
+
+const $=id=>document.getElementById(id);
+const dropZone=$('dropZone'), fileInput=$('fileInput'), dropFilename=$('dropFilename');
+const specInfoPanel=$('specInfoPanel'), specInfoGrid=$('specInfoGrid');
+const btnGenerate=$('btnGenerate'), btnDownload=$('btnDownload'), btnCopy=$('btnCopy');
+const generateLabel=$('generateLabel'), errorBox=$('errorBox');
+const toolbar=$('toolbar'), emptyState=$('emptyState'), codeWrap=$('codeWrap');
+const lineNumbers=$('lineNumbers'), codeContent=$('codeContent');
+const outFilename=$('outFilename'), outStats=$('outStats');
+const optAsync=$('optAsync'), optValidate=$('optValidate'), optBaseUrl=$('optBaseUrl');
+const rowAsync=$('rowAsync'), rowValidate=$('rowValidate');
+const toast=$('toast');
+
+// ── Language select ────────────────────────────────────────────────────
+const langSelect = $('langSelect');
+langSelect.addEventListener('change', () => {
+  currentLang = langSelect.value;
+  updateOptionsVisibility();
+  if (currentSpec) runGenerate();
+});
+
+function updateOptionsVisibility() {
+  const isPy = currentLang === 'python';
+  rowAsync.classList.toggle('disabled-opt', !isPy);
+  rowValidate.classList.toggle('disabled-opt', !isPy);
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type='ok') {
+  clearTimeout(toastTimer);
+  toast.textContent=msg; toast.className=`show ${type}`;
+  toastTimer=setTimeout(()=>toast.className='', 3000);
+}
+
+// ── File load ─────────────────────────────────────────────────────────
+function setFile(file) {
+  const ext=(file.name.split('.').pop()||'').toLowerCase();
+  if(!['json','yaml','yml'].includes(ext)){ showToast('Please upload a .json or .yaml file','err'); return; }
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try {
+      let spec;
+      if(ext==='json') spec=JSON.parse(e.target.result);
+      else {
+        if(typeof jsyaml==='undefined') throw new Error('YAML support requires an internet connection to load js-yaml (CDN).');
+        spec=jsyaml.load(e.target.result);
+      }
+      currentSpec=spec;
+      dropFilename.textContent=file.name; dropFilename.style.display='block';
+      dropZone.classList.add('has-file');
+      btnGenerate.disabled=false; errorBox.style.display='none';
+      const info=specInfo(spec); renderSpecInfo(info);
+      showToast(`Loaded: ${info.title||file.name}`,'ok');
+    } catch(err) {
+      errorBox.textContent='Parse error: '+err.message; errorBox.style.display='block';
+      showToast('Failed to parse file','err');
+    }
+  };
+  reader.readAsText(file);
+}
+
+fileInput.addEventListener('change',e=>{ if(e.target.files[0]) setFile(e.target.files[0]); });
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag-over');});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f){fileInput.files=e.dataTransfer.files;setFile(f);}});
+
+// ── Spec info card ────────────────────────────────────────────────────
+function fmtBadge(fmt){const m={swagger2:['fmt-swagger2','Swagger 2.0'],oas30:['fmt-oas30','OAS 3.0'],oas31:['fmt-oas31','OAS 3.1'],asyncapi:['fmt-asyncapi','AsyncAPI']};const[c,l]=m[fmt]||['','?'];return `<span class="format-badge ${c}">${l}</span>`;}
+
+function renderSpecInfo(info){
+  const cells=[
+    ['Format',fmtBadge(info.format)],['Version',info.version||'—'],
+    ['Title',info.title||'—',true],
+    ['Paths',info.paths],['Operations',info.operations],['Schemas',info.schemas],
+    ['Security',info.security.length?info.security.join(', '):'None'],
+    ['Servers',info.servers.length||'—'],
+    ...(info.webhooks?[['Webhooks',info.webhooks]]:[]),
+    ...(info.channels?[['Channels',info.channels]]:[]),
+    ...(info.description?[['Desc',info.description,true]]:[]),
+  ];
+  specInfoGrid.innerHTML=cells.map(([l,v,span])=>{const plain=String(v).replace(/<[^>]*>/g,'');return`<div class="info-cell ${span?'span2':''}"><div class="ic-label">${l}</div><div class="ic-value" title="${plain}">${v}</div></div>`;}).join('');
+  specInfoPanel.classList.remove('hidden');
+}
+
+// ── Generate ──────────────────────────────────────────────────────────
+const EXT  = { python:'.py', javascript:'.js', go:'.go', c:'.c', cpp:'.hpp', csharp:'.cs' };
+const MIME = { python:'text/x-python', javascript:'text/javascript', go:'text/x-go', c:'text/x-csrc', cpp:'text/x-c++src', csharp:'text/x-csharp' };
+
+function runGenerate(){
+  if(!currentSpec) return;
+  generateLabel.innerHTML='<span class="spinner"></span>';
+  errorBox.style.display='none';
+  btnGenerate.disabled=true;
+  setTimeout(()=>{
+    try {
+      const code = generateForLang(currentSpec, {
+        language: currentLang,
+        useAsync: optAsync.checked,
+        validate: optValidate.checked,
+        baseUrl: optBaseUrl.value.trim() || null,
+      });
+      const title = (currentSpec.info?.title || 'client');
+      const ext = EXT[currentLang] || '.py';
+      const filename = safeName(title.replace(/\s+/g,'_')) + ext;
+      currentCode=code; currentFilename=filename;
+      renderCode(code, currentLang);
+      outFilename.textContent=filename;
+      const lines=code.split('\n').length;
+      outStats.textContent=`${lines.toLocaleString()} lines · ${(new TextEncoder().encode(code).length/1024).toFixed(1)} KB`;
+      toolbar.classList.remove('hidden'); emptyState.classList.add('hidden');
+      codeWrap.classList.remove('hidden'); btnDownload.classList.remove('hidden');
+      btnDownload.textContent=`⬇ Download ${ext}`;
+      showToast(`Generated ${lines} lines`,'ok');
+    } catch(err) {
+      errorBox.textContent=err.message+(err.stack?'\n\n'+err.stack:'');
+      errorBox.style.display='block'; showToast('Generation failed','err');
+    } finally { btnGenerate.disabled=false; generateLabel.textContent='Generate SDK'; }
+  }, 10);
+}
+
+btnGenerate.addEventListener('click', runGenerate);
+[optAsync,optValidate].forEach(el=>el.addEventListener('change',()=>{ if(currentSpec) runGenerate(); }));
+
+// ── Syntax highlighting ────────────────────────────────────────────────
+function escH(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function highlightPython(code){
+  if(code.split('\n').length>2500) return escH(code);
+  return code.split('\n').map(line=>{
+    let cmt='', core=line, ci=-1, inS=false, sc='';
+    for(let i=0;i<line.length;i++){const c=line[i];if(!inS&&(c==='"'||c==="'")){inS=true;sc=c;}else if(inS&&c===sc&&line[i-1]!=='\\')inS=false;else if(!inS&&c==='#'){ci=i;break;}}
+    if(ci>=0){cmt=escH(line.slice(ci));core=line.slice(0,ci);}
+    let o=escH(core);
+    o=o.replace(/^(\s*)(@[\w.]+)/m,(_,sp,d)=>sp+`<span class="dc">${d}</span>`);
+    o=o.replace(/\b(def|class)\s+(\w+)/g,(_,kw,n)=>`<span class="kw">${kw}</span> <span class="${kw==='def'?'fn':'tp'}">${n}</span>`);
+    o=o.replace(/\b(return|import|from|if|else|elif|for|while|not|and|or|in|is|None|True|False|try|except|finally|raise|with|as|async|await|pass|break|continue|del|global|nonlocal|lambda|yield)\b/g,'<span class="kw">$&</span>');
+    o=o.replace(/\b(str|int|float|bool|list|dict|set|tuple|len|range|isinstance|Optional|List|Dict|Any|Union)\b/g,'<span class="bi">$&</span>');
+    o=o.replace(/\b(\d[\d_]*(?:\.\d+)?(?:[eE][+-]?\d+)?)\b/g,'<span class="nu">$1</span>');
+    if(cmt) o+=`<span class="cm">${cmt}</span>`;
+    return o;
+  }).join('\n');
+}
+
+function highlightJS(code){
+  if(code.split('\n').length>2500) return escH(code);
+  return code.split('\n').map(line=>{
+    let cmt='', core=line;
+    const ci=line.indexOf('//');
+    if(ci>=0 && !line.slice(0,ci).includes('"') && !line.slice(0,ci).includes("'")){cmt=escH(line.slice(ci));core=line.slice(0,ci);}
+    let o=escH(core);
+    o=o.replace(/\b(function|class)\s+(\w+)/g,(_,kw,n)=>`<span class="js-kw">${kw}</span> <span class="js-fn">${n}</span>`);
+    o=o.replace(/\b(const|let|var|return|if|else|for|while|do|switch|case|break|continue|new|delete|typeof|instanceof|in|of|import|export|default|async|await|try|catch|finally|throw|this|super|extends|class|static|null|undefined|true|false)\b/g,'<span class="js-kw">$&</span>');
+    o=o.replace(/\b(Promise|fetch|console|Object|Array|String|Number|Boolean|JSON|Math|Date|Error|Map|Set|Symbol|Proxy|Reflect)\b/g,'<span class="js-bi">$&</span>');
+    o=o.replace(/\b(\d[\d_]*(?:\.\d+)?(?:[eE][+-]?\d+)?)\b/g,'<span class="js-nu">$1</span>');
+    o=o.replace(/(["'`])([^"'`]*)\1/g,'<span class="js-st">$1$2$1</span>');
+    if(cmt) o+=`<span class="js-cm">${cmt}</span>`;
+    return o;
+  }).join('\n');
+}
+
+function highlightGo(code){
+  if(code.split('\n').length>2500) return escH(code);
+  return code.split('\n').map(line=>{
+    let cmt='', core=line;
+    const ci=line.indexOf('//');
+    if(ci>=0 && !line.slice(0,ci).includes('"')){cmt=escH(line.slice(ci));core=line.slice(0,ci);}
+    let o=escH(core);
+    o=o.replace(/\b(func)\s+(\w+)/g,(_,kw,n)=>`<span class="go-kw">${kw}</span> <span class="go-fn">${n}</span>`);
+    o=o.replace(/\b(func)\s+\(([^)]*)\)\s+(\w+)/g,(_,kw,recv,n)=>`<span class="go-kw">${kw}</span> (${escH(recv)}) <span class="go-fn">${n}</span>`);
+    o=o.replace(/\b(package|import|type|struct|interface|var|const|return|if|else|for|range|switch|case|default|break|continue|goto|defer|go|select|chan|map|func|nil|true|false|make|new|append|len|cap|close|delete|copy|panic|recover)\b/g,'<span class="go-kw">$&</span>');
+    o=o.replace(/\b(string|int|int64|int32|float64|float32|bool|byte|rune|error|interface)\b/g,'<span class="go-tp">$&</span>');
+    o=o.replace(/\b(\d[\d_]*(?:\.\d+)?(?:[eE][+-]?\d+)?)\b/g,'<span class="go-nu">$1</span>');
+    o=o.replace(/"([^"]*)"/g,'<span class="go-st">"$1"</span>');
+    if(cmt) o+=`<span class="go-cm">${cmt}</span>`;
+    return o;
+  }).join('\n');
+}
+
+function highlightC(code){
+  if(code.split('\n').length>2500) return escH(code);
+  return code.split('\n').map(line=>{
+    let cmt='', core=line;
+    const ci=line.indexOf('//');
+    if(ci>=0 && !line.slice(0,ci).includes('"')){cmt=escH(line.slice(ci));core=line.slice(0,ci);}
+    let o=escH(core);
+    // preprocessor directives
+    o=o.replace(/^(\s*)(#\w+)/m,(_,sp,d)=>sp+`<span class="go-fn">${d}</span>`);
+    // function definitions
+    o=o.replace(/\b(\w+)\s*\(/g,(m,n)=>{
+      const kws=new Set(['if','for','while','switch','return','sizeof','typeof']);
+      return kws.has(n)?m:`<span class="go-fn">${n}</span>(`;
+    });
+    // keywords
+    o=o.replace(/\b(auto|break|case|char|const|continue|default|do|double|else|enum|extern|float|for|goto|if|inline|int|long|register|return|short|signed|sizeof|static|struct|switch|typedef|union|unsigned|void|volatile|while|nullptr|true|false|class|public|private|protected|explicit|virtual|override|noexcept|template|typename|namespace|using|new|delete|operator|this|std)\b/g,'<span class="go-kw">$&</span>');
+    // types
+    o=o.replace(/\b(int64_t|uint64_t|int32_t|uint32_t|int8_t|uint8_t|size_t|ssize_t|CURL|CURLcode|CURLMcode|string|optional|map|vector|unique_ptr|shared_ptr)\b/g,'<span class="go-tp">$&</span>');
+    // numbers
+    o=o.replace(/\b(\d[\d_]*(?:\.\d+)?(?:[eE][+-]?\d+)?)\b/g,'<span class="go-nu">$1</span>');
+    // strings
+    o=o.replace(/"([^"]*)"/g,'<span class="go-st">"$1"</span>');
+    if(cmt) o+=`<span class="go-cm">${cmt}</span>`;
+    // block comments
+    o=o.replace(/\/\*([^*]|\*(?!\/))*\*\//g,'<span class="go-cm">$&</span>');
+    return o;
+  }).join('\n');
+}
+
+function highlightCSharp(code){
+  if(code.split('\n').length>2500) return escH(code);
+  return code.split('\n').map(line=>{
+    let cmt='', core=line;
+    const ci=line.indexOf('//');
+    if(ci>=0 && !line.slice(0,ci).includes('"')){cmt=escH(line.slice(ci));core=line.slice(0,ci);}
+    let o=escH(core);
+    // XML doc tags inside comments get styled later — just treat whole comment as comment
+    // class/interface/record/struct + name
+    o=o.replace(/\b(class|interface|record|struct|enum)\s+(\w+)/g,
+      (_,kw,n)=>`<span class="kw">${kw}</span> <span class="tp">${n}</span>`);
+    // method/property-ish: word followed by ( — highlight as function name
+    o=o.replace(/\b([A-Z]\w*)\s*\(/g, (m,n)=>`<span class="fn">${n}</span>(`);
+    // keywords
+    o=o.replace(/\b(abstract|as|base|bool|break|byte|case|catch|char|checked|const|continue|decimal|default|delegate|do|double|else|enum|event|explicit|extern|false|finally|fixed|float|for|foreach|goto|if|implicit|in|int|interface|internal|is|lock|long|namespace|new|null|object|operator|out|override|params|private|protected|public|readonly|ref|return|sbyte|sealed|short|sizeof|stackalloc|static|string|struct|switch|this|throw|true|try|typeof|uint|ulong|unchecked|unsafe|ushort|using|virtual|void|volatile|while|async|await|var|dynamic|record|init|class|where|yield)\b/g,
+      '<span class="kw">$&</span>');
+    // built-in types / BCL names
+    o=o.replace(/\b(Task|HttpClient|HttpRequestMessage|JsonElement|JsonSerializer|StringContent|FormUrlEncodedContent|Uri|IDisposable|List|Dictionary|KeyValuePair|Encoding|Convert|Exception|ArgumentException|InvalidOperationException|CancellationToken|AuthenticationHeaderValue|MediaTypeWithQualityHeaderValue)\b/g,
+      '<span class="bi">$&</span>');
+    // attributes
+    o=o.replace(/\[(\w+)\]/g,'<span class="dc">[$1]</span>');
+    // strings
+    o=o.replace(/(\$?"(?:[^"\\]|\\.)*")/g,'<span class="st">$1</span>');
+    // numbers
+    o=o.replace(/\b(\d[\d_]*(?:\.\d+)?(?:[eE][+-]?\d+)?[fFdDmMlLuU]*)\b/g,'<span class="nu">$1</span>');
+    if(cmt) o+=`<span class="cm">${cmt}</span>`;
+    return o;
+  }).join('\n');
+}
+
+function renderCode(code, lang='python'){
+  const lines=code.split('\n');
+  lineNumbers.innerHTML=lines.map((_,i)=>i+1).join('\n');
+  const hl = lang==='javascript' ? highlightJS
+           : lang==='go'         ? highlightGo
+           : lang==='c'||lang==='cpp' ? highlightC
+           : lang==='csharp'     ? highlightCSharp
+           : highlightPython;
+  codeContent.innerHTML=hl(code);
+}
+
+// ── Copy / Download ────────────────────────────────────────────────────
+btnCopy.addEventListener('click',()=>{
+  if(!currentCode) return;
+  navigator.clipboard.writeText(currentCode)
+    .then(()=>{showToast('Copied','ok');btnCopy.textContent='✅ Copied';setTimeout(()=>btnCopy.textContent='📋 Copy',2000);})
+    .catch(()=>showToast('Copy failed','err'));
+});
+
+btnDownload.addEventListener('click',()=>{
+  if(!currentCode) return;
+  const mime = MIME[currentLang] || 'text/plain';
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([currentCode],{type:mime}));
+  a.download=currentFilename; a.click(); URL.revokeObjectURL(a.href);
+  showToast(`Downloaded ${currentFilename}`,'ok');
+});
+</script>
+</body>
+</html>
