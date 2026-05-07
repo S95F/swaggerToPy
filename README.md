@@ -1,23 +1,24 @@
 # SwaggerToPy
-This repository is the application files for a html frontend application that allows swagger descriptor files to be digested into a python class. This will facilitate software developers using APIs.
+This repository is the application files for an HTML frontend application that allows swagger descriptor files to be digested into a python class. This will facilitate software developers using APIs.
 
-This repository contains a nodeJS setup to utilize the HTML interface that is powered by pyscript. To utlize the python script itself acquire the script called swaggertopy_external.py in the html\py folder. 
+The backend is a single Go binary that serves the static HTML and exposes `POST /api/convert`, which accepts a Swagger / OpenAPI JSON body and returns the generated Python class.
 
-It has only two dependencies. 
+## Build
 
--json
--re
+    go build -o swaggertopy
 
-Once the dependencies are installed add
+## Run
 
-import swaggertopy_external as swtpy
+    ./swaggertopy                  # listens on :2323 (default)
+    ./swaggertopy -port 8080       # override via flag
+    PORT=8080 ./swaggertopy        # override via env var
 
-and execute it with 
+The `-port` flag is intended for use by configuration management (e.g. Puppet) — assign whatever port the host has free.
 
-output = swtpy.myEval(JSON)
-output = output.genClass
+Other flags:
 
-Where JSON is the JSON input from a swagger file. The output of the initializer will put all plain text python code into 'genClass' which is where it can be retrieved. 
+- `-addr` — bind address (default `0.0.0.0`)
+- `-html` — directory containing static assets (default `html`)
 
 
 # License

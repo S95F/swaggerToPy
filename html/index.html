@@ -1,25 +1,22 @@
 <!DOCTYPE HYML>
 <html lang="en">
-	
-	
+
+
 	<head>
 		<script src="./js/main.js"></script>
 		<meta charset="utf-8">
 		<link href="./css/main.css" rel="stylesheet" type="text/css"/>
-		<link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
-		<script defer src="https://pyscript.net/alpha/pyscript.js"></script>
 		<title>Swagger to Python</title>
 		<link rel="icon" type="image/x-icon" href="/fav/tenebrous.blue.png">
 	</head>
 	<body>
-		<py-script src="./py/swaggertopy.py"></py-script>
 		<h1 class="header">Swagger to Python SDK</h1>
-		<div class="cc">		
+		<div class="cc">
 			<div class="content">
 				<h2>Welcome!</h2>
 				<h2>Application</h2>
 				<div class="hdash"></div>
-				<p>This application is developed in python, but thanks to <a target="_blank" href="https://pyscript.net/">PyScript</a> is able to be fully executed in your browser! No download necessary and is always the latest version! Just upload JSON file!</p>
+				<p>This application converts Swagger / OpenAPI JSON files into a ready-to-use Python class. Conversion is performed by a Go backend (see <code>main.go</code>) — upload your JSON file and the generated <code>.py</code> will download automatically.</p>
 				<br>
 				<div class="fileUpload">
 					<input type="file" id="myFile" name="filename"/>
@@ -30,7 +27,7 @@
 				</div>
 				<div class="hdash"></div>
 				<p>
-					Thank you for checking out my <a target="_blank" href="https://swagger.io/">Swagger</a> file to a <a target="_blank" href="https://www.python.org/">Python</a> class converter application. This application will turn various REST API definitions into easily executable python code. Facilitating application generation for client side developers and REST API destributors. It does this by utilizing the standardized method of describing REST based APIs to extract the details of the parameters of the endpoint to create a function that is then implemented as part of a class. This class definition will contain functions for each executable endpoint for the api. It is able to implement a server selection initialization function for the class if the API utilizes multiple server domains. It currently is only able to implement basic authentication using the authorization header for authenticating with the APIs. 
+					Thank you for checking out my <a target="_blank" href="https://swagger.io/">Swagger</a> file to a <a target="_blank" href="https://www.python.org/">Python</a> class converter application. This application will turn various REST API definitions into easily executable python code. Facilitating application generation for client side developers and REST API destributors. It does this by utilizing the standardized method of describing REST based APIs to extract the details of the parameters of the endpoint to create a function that is then implemented as part of a class. This class definition will contain functions for each executable endpoint for the api. It is able to implement a server selection initialization function for the class if the API utilizes multiple server domains. It currently is only able to implement basic authentication using the authorization header for authenticating with the APIs.
 				</p>
 				<h2>Specifications</h2>
 				<h3><b>Types</b></h3>
@@ -62,7 +59,7 @@
 				<h2>Code</h2>
 				<p>The code is hosted on github. Check out the repository <a target="_blank" href="https://github.com/S95F/swaggerToPy">>here<</a></p>
 			</div>
-			
+
 			<div class="footer">
 				<div class="hdash"></div>
 				<div class="fcontent">
@@ -70,7 +67,6 @@
 				</div>
 			</div>
 		</div>
-	
+
 	</body>
 </html>
-
