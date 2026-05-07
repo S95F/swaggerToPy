@@ -1,0 +1,10 @@
+{
+  "name": "swaggerToPy",
+  "lockfileVersion": 3,
+  "requires": true,
+  "packages": {},
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}
