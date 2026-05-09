@@ -1,0 +1,7 @@
+{
+  "caddy_enabled": true,
+  "caddy_auto_apply": true,
+  "caddy_mode": "file_server",
+  "caddy_domain": "swagger.sfcode.online",
+  "caddy_root": "{repo_path}/html"
+}
